@@ -1,0 +1,375 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Tenant {
+  id        String   @id @default(uuid()) @db.Uuid
+  name      String   @db.VarChar(200)
+  slug      String   @unique @db.VarChar(100)
+  logo      String?  @db.VarChar(500)
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  users          User[]
+  roles          Role[]
+  products       Product[]
+  categories     Category[]
+  warehouses     Warehouse[]
+  suppliers      Supplier[]
+  customers      Customer[]
+  inventory      Inventory[]
+  inventoryLogs  InventoryLog[]
+  purchaseOrders PurchaseOrder[]
+  saleOrders     SaleOrder[]
+  stocktakes     Stocktake[]
+  transfers      Transfer[]
+
+  @@map("tenants")
+}
+
+model User {
+  id           String   @id @default(uuid()) @db.Uuid
+  tenantId     String   @map("tenant_id") @db.Uuid
+  email        String   @db.VarChar(200)
+  passwordHash String   @map("password_hash") @db.VarChar(200)
+  name         String   @db.VarChar(100)
+  phone        String?  @db.VarChar(20)
+  roleId       String?  @map("role_id") @db.Uuid
+  enabled      Boolean  @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  role   Role?  @relation(fields: [roleId], references: [id])
+
+  @@unique([tenantId, email])
+  @@map("users")
+}
+
+model Role {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  name        String   @db.VarChar(100)
+  permissions Json     @default("[]")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant Tenant @relation(fields: [tenantId], references: [id])
+  users  User[]
+
+  @@unique([tenantId, name])
+  @@map("roles")
+}
+
+model Category {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  parentId  String?  @map("parent_id") @db.Uuid
+  sortOrder Int      @default(0) @map("sort_order")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant   Tenant     @relation(fields: [tenantId], references: [id])
+  parent   Category?  @relation("CategoryHierarchy", fields: [parentId], references: [id])
+  children Category[] @relation("CategoryHierarchy")
+  products Product[]
+
+  @@unique([tenantId, name])
+  @@map("categories")
+}
+
+model Product {
+  id         String   @id @default(uuid()) @db.Uuid
+  tenantId   String   @map("tenant_id") @db.Uuid
+  categoryId String?  @map("category_id") @db.Uuid
+  name       String   @db.VarChar(200)
+  barcode    String?  @db.VarChar(100)
+  sku        String?  @db.VarChar(100)
+  unit       String   @default("个") @db.VarChar(20)
+  salePrice  Decimal  @default(0) @map("sale_price") @db.Decimal(10, 2)
+  costPrice  Decimal  @default(0) @map("cost_price") @db.Decimal(10, 2)
+  imageUrl   String?  @map("image_url") @db.VarChar(500)
+  specs      Json?    @default("{}")
+  enabled    Boolean  @default(true)
+  createdAt  DateTime @default(now()) @map("created_at")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  category       Category?       @relation(fields: [categoryId], references: [id])
+  inventory      Inventory[]
+  inventoryLogs  InventoryLog[]
+  purchaseItems  PurchaseItem[]
+  saleItems      SaleItem[]
+  stocktakeItems StocktakeItem[]
+  transferItems  TransferItem[]
+
+  @@unique([tenantId, barcode])
+  @@unique([tenantId, sku])
+  @@index([tenantId, name])
+  @@map("products")
+}
+
+model Warehouse {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  address   String?  @db.Text
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  inventory      Inventory[]
+  purchaseOrders PurchaseOrder[]
+  saleOrders     SaleOrder[]
+  stocktakes     Stocktake[]
+  fromTransfers  Transfer[]      @relation("FromWarehouse")
+  toTransfers    Transfer[]      @relation("ToWarehouse")
+
+  @@unique([tenantId, name])
+  @@map("warehouses")
+}
+
+model Supplier {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  phone     String?  @db.VarChar(20)
+  contact   String?  @db.VarChar(100)
+  address   String?  @db.Text
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant         Tenant          @relation(fields: [tenantId], references: [id])
+  purchaseOrders PurchaseOrder[]
+
+  @@unique([tenantId, name])
+  @@map("suppliers")
+}
+
+model Customer {
+  id        String   @id @default(uuid()) @db.Uuid
+  tenantId  String   @map("tenant_id") @db.Uuid
+  name      String   @db.VarChar(200)
+  phone     String?  @db.VarChar(20)
+  address   String?  @db.Text
+  enabled   Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  tenant     Tenant      @relation(fields: [tenantId], references: [id])
+  saleOrders SaleOrder[]
+
+  @@unique([tenantId, name])
+  @@map("customers")
+}
+
+model Inventory {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  productId   String   @map("product_id") @db.Uuid
+  warehouseId String   @map("warehouse_id") @db.Uuid
+  quantity    Decimal  @default(0) @db.Decimal(12, 2)
+  unitCost    Decimal  @default(0) @map("unit_cost") @db.Decimal(10, 2)
+  updatedAt   DateTime @updatedAt @map("updated_at")
+
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
+  product   Product   @relation(fields: [productId], references: [id])
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id])
+
+  @@unique([tenantId, productId, warehouseId])
+  @@map("inventory")
+}
+
+model InventoryLog {
+  id          String   @id @default(uuid()) @db.Uuid
+  tenantId    String   @map("tenant_id") @db.Uuid
+  productId   String   @map("product_id") @db.Uuid
+  warehouseId String?  @map("warehouse_id") @db.Uuid
+  type        String   @db.VarChar(20)
+  quantity    Decimal  @db.Decimal(12, 2)
+  beforeQty   Decimal  @map("before_qty") @db.Decimal(12, 2)
+  afterQty    Decimal  @map("after_qty") @db.Decimal(12, 2)
+  refId       String?  @map("ref_id") @db.VarChar(100)
+  refType     String?  @map("ref_type") @db.VarChar(50)
+  remark      String?  @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  tenant  Tenant  @relation(fields: [tenantId], references: [id])
+  product Product @relation(fields: [productId], references: [id])
+
+  @@index([tenantId, productId])
+  @@index([tenantId, createdAt])
+  @@map("inventory_logs")
+}
+
+enum PurchaseStatus {
+  DRAFT
+  CONFIRMED
+  RECEIVED
+  CANCELLED
+}
+
+model PurchaseOrder {
+  id          String         @id @default(uuid()) @db.Uuid
+  tenantId    String         @map("tenant_id") @db.Uuid
+  orderNo     String         @unique @map("order_no") @db.VarChar(50)
+  supplierId  String?        @map("supplier_id") @db.Uuid
+  warehouseId String?        @map("warehouse_id") @db.Uuid
+  totalAmount Decimal        @default(0) @map("total_amount") @db.Decimal(12, 2)
+  status      PurchaseStatus @default(DRAFT)
+  remark      String?        @db.Text
+  createdBy   String         @map("created_by") @db.Uuid
+  createdAt   DateTime       @default(now()) @map("created_at")
+  updatedAt   DateTime       @updatedAt @map("updated_at")
+
+  tenant    Tenant         @relation(fields: [tenantId], references: [id])
+  supplier  Supplier?      @relation(fields: [supplierId], references: [id])
+  warehouse Warehouse?     @relation(fields: [warehouseId], references: [id])
+  items     PurchaseItem[]
+
+  @@index([tenantId, orderNo])
+  @@index([tenantId, createdAt])
+  @@map("purchase_orders")
+}
+
+model PurchaseItem {
+  id              String  @id @default(uuid()) @db.Uuid
+  purchaseOrderId String  @map("purchase_order_id") @db.Uuid
+  productId       String  @map("product_id") @db.Uuid
+  quantity        Decimal @db.Decimal(12, 2)
+  unitCost        Decimal @map("unit_cost") @db.Decimal(10, 2)
+  subtotal        Decimal @db.Decimal(12, 2)
+
+  purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
+  product       Product       @relation(fields: [productId], references: [id])
+
+  @@map("purchase_items")
+}
+
+enum SaleStatus {
+  DRAFT
+  CONFIRMED
+  DELIVERED
+  CANCELLED
+}
+
+model SaleOrder {
+  id          String     @id @default(uuid()) @db.Uuid
+  tenantId    String     @map("tenant_id") @db.Uuid
+  orderNo     String     @unique @map("order_no") @db.VarChar(50)
+  customerId  String?    @map("customer_id") @db.Uuid
+  warehouseId String?    @map("warehouse_id") @db.Uuid
+  totalAmount Decimal    @default(0) @map("total_amount") @db.Decimal(12, 2)
+  status      SaleStatus @default(DRAFT)
+  remark      String?    @db.Text
+  createdBy   String     @map("created_by") @db.Uuid
+  createdAt   DateTime   @default(now()) @map("created_at")
+  updatedAt   DateTime   @updatedAt @map("updated_at")
+
+  customer  Customer?  @relation(fields: [customerId], references: [id])
+  warehouse Warehouse? @relation(fields: [warehouseId], references: [id])
+  tenant    Tenant     @relation(fields: [tenantId], references: [id])
+  items     SaleItem[]
+
+  @@index([tenantId, orderNo])
+  @@index([tenantId, createdAt])
+  @@map("sale_orders")
+}
+
+model SaleItem {
+  id          String  @id @default(uuid()) @db.Uuid
+  saleOrderId String  @map("sale_order_id") @db.Uuid
+  productId   String  @map("product_id") @db.Uuid
+  quantity    Decimal @db.Decimal(12, 2)
+  unitPrice   Decimal @map("unit_price") @db.Decimal(10, 2)
+  subtotal    Decimal @db.Decimal(12, 2)
+
+  saleOrder SaleOrder @relation(fields: [saleOrderId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id])
+
+  @@map("sale_items")
+}
+
+enum StocktakeStatus {
+  DRAFT
+  IN_PROGRESS
+  COMPLETED
+  CANCELLED
+}
+
+model Stocktake {
+  id          String          @id @default(uuid()) @db.Uuid
+  tenantId    String          @map("tenant_id") @db.Uuid
+  warehouseId String          @map("warehouse_id") @db.Uuid
+  status      StocktakeStatus @default(DRAFT)
+  remark      String?         @db.Text
+  createdBy   String          @map("created_by") @db.Uuid
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  warehouse Warehouse       @relation(fields: [warehouseId], references: [id])
+  tenant    Tenant          @relation(fields: [tenantId], references: [id])
+  items     StocktakeItem[]
+
+  @@map("stocktakes")
+}
+
+model StocktakeItem {
+  id             String  @id @default(uuid()) @db.Uuid
+  stocktakeId    String  @map("stocktake_id") @db.Uuid
+  productId      String  @map("product_id") @db.Uuid
+  bookQuantity   Decimal @map("book_qty") @db.Decimal(12, 2)
+  actualQuantity Decimal @map("actual_qty") @db.Decimal(12, 2)
+  diffQuantity   Decimal @map("diff_qty") @db.Decimal(12, 2)
+
+  stocktake Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id])
+
+  @@map("stocktake_items")
+}
+
+enum TransferStatus {
+  DRAFT
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+}
+
+model Transfer {
+  id              String         @id @default(uuid()) @db.Uuid
+  tenantId        String         @map("tenant_id") @db.Uuid
+  fromWarehouseId String         @map("from_warehouse_id") @db.Uuid
+  toWarehouseId   String         @map("to_warehouse_id") @db.Uuid
+  status          TransferStatus @default(DRAFT)
+  remark          String?        @db.Text
+  createdBy       String         @map("created_by") @db.Uuid
+  createdAt       DateTime       @default(now()) @map("created_at")
+  updatedAt       DateTime       @updatedAt @map("updated_at")
+
+  fromWarehouse Warehouse      @relation("FromWarehouse", fields: [fromWarehouseId], references: [id])
+  toWarehouse   Warehouse      @relation("ToWarehouse", fields: [toWarehouseId], references: [id])
+  tenant        Tenant         @relation(fields: [tenantId], references: [id])
+  items         TransferItem[]
+
+  @@map("transfers")
+}
+
+model TransferItem {
+  id         String  @id @default(uuid()) @db.Uuid
+  transferId String  @map("transfer_id") @db.Uuid
+  productId  String  @map("product_id") @db.Uuid
+  quantity   Decimal @db.Decimal(12, 2)
+
+  transfer Transfer @relation(fields: [transferId], references: [id], onDelete: Cascade)
+  product  Product  @relation(fields: [productId], references: [id])
+
+  @@map("transfer_items")
+}
