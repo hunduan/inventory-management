@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx skills *)",
+      "WebFetch(domain:skills.sh)",
+      "Bash(npm --version)",
+      "Bash(npm init *)",
+      "Bash(npm install *)",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('Dependencies:', Object.keys\\(p.dependencies\\).join\\(', '\\)\\); console.log\\('DevDependencies:', Object.keys\\(p.devDependencies\\).join\\(', '\\)\\);\")"
+    ]
+  }
+}
