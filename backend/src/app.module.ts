@@ -16,6 +16,7 @@ import { StocktakeModule } from './modules/stocktake/stocktake.module';
 import { TransfersModule } from './modules/transfers/transfers.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ReportsModule } from './modules/reports/reports.module';
+import { UploadModule } from './modules/upload/upload.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 @Module({
@@ -36,6 +37,7 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     TransfersModule,
     InventoryModule,
     ReportsModule,
+    UploadModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
