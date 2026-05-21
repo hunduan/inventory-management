@@ -319,6 +319,7 @@ model Stocktake {
   tenant    Tenant          @relation(fields: [tenantId], references: [id])
   items     StocktakeItem[]
 
+  @@index([tenantId, createdAt])
   @@map("stocktakes")
 }
 
@@ -359,6 +360,7 @@ model Transfer {
   tenant        Tenant         @relation(fields: [tenantId], references: [id])
   items         TransferItem[]
 
+  @@index([tenantId, createdAt])
   @@map("transfers")
 }
 

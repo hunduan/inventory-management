@@ -11,7 +11,8 @@
       "Bash(git commit *)",
       "Bash(node -e \"const p = require\\('./package.json'\\); console.log\\('Dependencies:', Object.keys\\(p.dependencies\\).join\\(', '\\)\\); console.log\\('DevDependencies:', Object.keys\\(p.devDependencies\\).join\\(', '\\)\\);\")",
       "Bash(npm uninstall *)",
-      "Bash(git *)"
+      "Bash(git *)",
+      "Bash(npx prisma *)"
     ]
   }
 }
