@@ -32,7 +32,12 @@ export default function ReportsPage() {
         res = await reportsApi.profit(params);
       }
 
-      setData(res);
+      // Normalize backend field names to frontend expectations
+      const normalized = { ...res };
+      if (res.bySupplier) normalized.items = res.bySupplier.map((s: any) => ({ name: s.supplierName, amount: s.totalAmount, quantity: s.orderCount }));
+      if (res.byCustomer) normalized.items = res.byCustomer.map((c: any) => ({ name: c.customerName, amount: c.totalAmount, quantity: c.orderCount }));
+      if (res.totalOrders !== undefined) normalized.totalCount = res.totalOrders;
+      setData(normalized);
     } catch (err: any) {
       Taro.showToast({ title: err.message || '加载报表失败', icon: 'none' });
       setData(null);

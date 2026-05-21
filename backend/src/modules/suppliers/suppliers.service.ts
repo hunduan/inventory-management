@@ -35,12 +35,14 @@ export class SuppliersService {
   }
 
   async update(tenantId: string, id: string, data: { name?: string; phone?: string; email?: string; address?: string; contact?: string; remark?: string }) {
-    await this.findById(tenantId, id);
-    return this.prisma.supplier.update({ where: { id }, data });
+    const result = await this.prisma.supplier.updateMany({ where: { id, tenantId }, data });
+    if (result.count === 0) throw new NotFoundException('供应商不存在');
+    return this.findById(tenantId, id);
   }
 
   async remove(tenantId: string, id: string) {
-    await this.findById(tenantId, id);
-    return this.prisma.supplier.update({ where: { id }, data: { enabled: false } });
+    const result = await this.prisma.supplier.updateMany({ where: { id, tenantId }, data: { enabled: false } });
+    if (result.count === 0) throw new NotFoundException('供应商不存在');
+    return this.findById(tenantId, id);
   }
 }

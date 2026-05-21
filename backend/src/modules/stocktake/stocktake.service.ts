@@ -59,10 +59,12 @@ export class StocktakeService {
     if (!stocktake) throw new NotFoundException('盘点单不存在');
     if (stocktake.status !== 'DRAFT') throw new BadRequestException('盘点单状态不正确');
 
-    return this.prisma.stocktake.update({
-      where: { id },
+    const result = await this.prisma.stocktake.updateMany({
+      where: { id, tenantId },
       data: { status: 'IN_PROGRESS' },
     });
+    if (result.count === 0) throw new NotFoundException('盘点单不存在');
+    return this.findById(tenantId, id);
   }
 
   async complete(tenantId: string, id: string) {
@@ -96,7 +98,8 @@ export class StocktakeService {
       }
     }
 
-    return this.prisma.stocktake.update({ where: { id }, data: { status: 'COMPLETED' } });
+    await this.prisma.stocktake.updateMany({ where: { id, tenantId }, data: { status: 'COMPLETED' } });
+    return this.findById(tenantId, id);
   }
 
   async cancel(tenantId: string, id: string) {
@@ -106,6 +109,8 @@ export class StocktakeService {
     if (!stocktake) throw new NotFoundException('盘点单不存在');
     if (stocktake.status === 'COMPLETED') throw new BadRequestException('已完成的盘点单不能作废');
 
-    return this.prisma.stocktake.update({ where: { id }, data: { status: 'CANCELLED' } });
+    const result = await this.prisma.stocktake.updateMany({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
+    if (result.count === 0) throw new NotFoundException('盘点单不存在');
+    return this.findById(tenantId, id);
   }
 }

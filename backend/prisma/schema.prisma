@@ -28,6 +28,8 @@ model Tenant {
   saleOrders     SaleOrder[]
   stocktakes     Stocktake[]
   transfers      Transfer[]
+  purchaseItems  PurchaseItem[]
+  saleItems      SaleItem[]
 
   @@map("tenants")
 }
@@ -242,15 +244,18 @@ model PurchaseOrder {
 
 model PurchaseItem {
   id              String  @id @default(uuid()) @db.Uuid
+  tenantId        String  @map("tenant_id") @db.Uuid
   purchaseOrderId String  @map("purchase_order_id") @db.Uuid
   productId       String  @map("product_id") @db.Uuid
   quantity        Decimal @db.Decimal(12, 2)
   unitCost        Decimal @map("unit_cost") @db.Decimal(10, 2)
   subtotal        Decimal @db.Decimal(12, 2)
 
+  tenant        Tenant        @relation(fields: [tenantId], references: [id])
   purchaseOrder PurchaseOrder @relation(fields: [purchaseOrderId], references: [id], onDelete: Cascade)
   product       Product       @relation(fields: [productId], references: [id])
 
+  @@index([tenantId])
   @@map("purchase_items")
 }
 
@@ -286,15 +291,19 @@ model SaleOrder {
 
 model SaleItem {
   id          String  @id @default(uuid()) @db.Uuid
+  tenantId    String  @map("tenant_id") @db.Uuid
   saleOrderId String  @map("sale_order_id") @db.Uuid
   productId   String  @map("product_id") @db.Uuid
   quantity    Decimal @db.Decimal(12, 2)
   unitPrice   Decimal @map("unit_price") @db.Decimal(10, 2)
+  unitCost    Decimal @default(0) @map("unit_cost") @db.Decimal(10, 2)
   subtotal    Decimal @db.Decimal(12, 2)
 
+  tenant   Tenant   @relation(fields: [tenantId], references: [id])
   saleOrder SaleOrder @relation(fields: [saleOrderId], references: [id], onDelete: Cascade)
-  product   Product   @relation(fields: [productId], references: [id])
+  product  Product  @relation(fields: [productId], references: [id])
 
+  @@index([tenantId])
   @@map("sale_items")
 }
 

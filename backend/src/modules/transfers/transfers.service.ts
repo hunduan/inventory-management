@@ -47,7 +47,9 @@ export class TransfersService {
     if (!transfer) throw new NotFoundException('调拨单不存在');
     if (transfer.status !== 'DRAFT') throw new BadRequestException('调拨单状态不正确');
 
-    return this.prisma.transfer.update({ where: { id }, data: { status: 'CONFIRMED' } });
+    const result = await this.prisma.transfer.updateMany({ where: { id, tenantId }, data: { status: 'CONFIRMED' } });
+    if (result.count === 0) throw new NotFoundException('调拨单不存在');
+    return this.findById(tenantId, id);
   }
 
   async complete(tenantId: string, id: string) {
@@ -92,7 +94,8 @@ export class TransfersService {
       }
     }
 
-    return this.prisma.transfer.update({ where: { id }, data: { status: 'COMPLETED' } });
+    await this.prisma.transfer.updateMany({ where: { id, tenantId }, data: { status: 'COMPLETED' } });
+    return this.findById(tenantId, id);
   }
 
   async cancel(tenantId: string, id: string) {
@@ -102,6 +105,8 @@ export class TransfersService {
     if (!transfer) throw new NotFoundException('调拨单不存在');
     if (transfer.status === 'COMPLETED') throw new BadRequestException('已完成的调拨单不能作废');
 
-    return this.prisma.transfer.update({ where: { id }, data: { status: 'CANCELLED' } });
+    const result = await this.prisma.transfer.updateMany({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
+    if (result.count === 0) throw new NotFoundException('调拨单不存在');
+    return this.findById(tenantId, id);
   }
 }

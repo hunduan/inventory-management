@@ -46,6 +46,7 @@ export class PurchasesService {
   async create(tenantId: string, userId: string, dto: CreatePurchaseDto) {
     const orderNo = await this.generateOrderNo(tenantId);
     const items = dto.items.map((item) => ({
+      tenantId,
       productId: item.productId,
       quantity: item.quantity,
       unitCost: item.unitCost,
@@ -64,8 +65,9 @@ export class PurchasesService {
   }
 
   async confirm(tenantId: string, id: string) {
-    await this.findById(tenantId, id);
-    return this.prisma.purchaseOrder.update({ where: { id }, data: { status: 'CONFIRMED' } });
+    const result = await this.prisma.purchaseOrder.updateMany({ where: { id, tenantId }, data: { status: 'CONFIRMED' } });
+    if (result.count === 0) throw new NotFoundException('采购单不存在');
+    return this.findById(tenantId, id);
   }
 
   async receive(tenantId: string, id: string) {
@@ -111,14 +113,16 @@ export class PurchasesService {
       }
     }
 
-    return this.prisma.purchaseOrder.update({
-      where: { id },
+    await this.prisma.purchaseOrder.updateMany({
+      where: { id, tenantId },
       data: { status: 'RECEIVED' },
     });
+    return this.findById(tenantId, id);
   }
 
   async cancel(tenantId: string, id: string) {
-    await this.findById(tenantId, id);
-    return this.prisma.purchaseOrder.update({ where: { id }, data: { status: 'CANCELLED' } });
+    const result = await this.prisma.purchaseOrder.updateMany({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
+    if (result.count === 0) throw new NotFoundException('采购单不存在');
+    return this.findById(tenantId, id);
   }
 }

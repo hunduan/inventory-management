@@ -45,11 +45,20 @@ export class SalesService {
 
   async create(tenantId: string, userId: string, dto: CreateSaleDto) {
     const orderNo = await this.generateOrderNo(tenantId);
-    const items = dto.items.map((item) => ({
-      productId: item.productId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      subtotal: item.quantity * item.unitPrice,
+    const items = await Promise.all(dto.items.map(async (item) => {
+      // Get current average cost from inventory
+      const inv = await this.prisma.inventory.findFirst({
+        where: { tenantId, productId: item.productId, warehouseId: dto.warehouseId },
+      });
+      const unitCost = inv ? Number(inv.unitCost) : 0;
+      return {
+        tenantId,
+        productId: item.productId,
+        quantity: item.quantity,
+        unitPrice: item.unitPrice,
+        unitCost,
+        subtotal: item.quantity * item.unitPrice,
+      };
     }));
     const totalAmount = items.reduce((sum, item) => sum + item.subtotal, 0);
 
@@ -64,8 +73,9 @@ export class SalesService {
   }
 
   async confirm(tenantId: string, id: string) {
-    await this.findById(tenantId, id);
-    return this.prisma.saleOrder.update({ where: { id }, data: { status: 'CONFIRMED' } });
+    const result = await this.prisma.saleOrder.updateMany({ where: { id, tenantId }, data: { status: 'CONFIRMED' } });
+    if (result.count === 0) throw new NotFoundException('销售单不存在');
+    return this.findById(tenantId, id);
   }
 
   async deliver(tenantId: string, id: string) {
@@ -102,14 +112,16 @@ export class SalesService {
       });
     }
 
-    return this.prisma.saleOrder.update({
-      where: { id },
+    await this.prisma.saleOrder.updateMany({
+      where: { id, tenantId },
       data: { status: 'DELIVERED' },
     });
+    return this.findById(tenantId, id);
   }
 
   async cancel(tenantId: string, id: string) {
-    await this.findById(tenantId, id);
-    return this.prisma.saleOrder.update({ where: { id }, data: { status: 'CANCELLED' } });
+    const result = await this.prisma.saleOrder.updateMany({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
+    if (result.count === 0) throw new NotFoundException('销售单不存在');
+    return this.findById(tenantId, id);
   }
 }

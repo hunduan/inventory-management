@@ -17,8 +17,9 @@ export class CategoriesService {
   }
 
   async update(tenantId: string, id: string, data: { name?: string; parentId?: string; sortOrder?: number }) {
-    await this.findById(tenantId, id);
-    return this.prisma.category.update({ where: { id }, data });
+    const result = await this.prisma.category.updateMany({ where: { id, tenantId }, data });
+    if (result.count === 0) throw new NotFoundException('分类不存在');
+    return this.findById(tenantId, id);
   }
 
   async findById(tenantId: string, id: string) {
@@ -28,7 +29,7 @@ export class CategoriesService {
   }
 
   async remove(tenantId: string, id: string) {
-    await this.findById(tenantId, id);
-    await this.prisma.category.delete({ where: { id } });
+    const result = await this.prisma.category.deleteMany({ where: { id, tenantId } });
+    if (result.count === 0) throw new NotFoundException('分类不存在');
   }
 }

@@ -72,7 +72,7 @@ export class ReportsService {
 
     const orders = await this.prisma.saleOrder.findMany({
       where,
-      include: { items: { include: { product: true } } },
+      include: { items: true },
     });
 
     let totalRevenue = 0;
@@ -81,14 +81,13 @@ export class ReportsService {
     for (const order of orders) {
       totalRevenue += Number(order.totalAmount);
       for (const item of order.items) {
-        const costPrice = Number(item.product.costPrice);
-        totalCost += costPrice * Number(item.quantity);
+        totalCost += Number(item.unitCost) * Number(item.quantity);
       }
     }
 
     const grossProfit = totalRevenue - totalCost;
     const margin = totalRevenue > 0 ? (grossProfit / totalRevenue) * 100 : 0;
 
-    return { totalRevenue, totalCost, grossProfit, margin: Math.round(margin * 100) / 100 };
+    return { totalRevenue, totalCost, grossProfit, totalProfit: grossProfit, margin: Math.round(margin * 100) / 100 };
   }
 }

@@ -50,12 +50,14 @@ export class ProductsService {
   }
 
   async update(tenantId: string, id: string, dto: UpdateProductDto) {
-    await this.findById(tenantId, id);
-    return this.prisma.product.update({ where: { id }, data: dto });
+    const result = await this.prisma.product.updateMany({ where: { id, tenantId }, data: dto as any });
+    if (result.count === 0) throw new NotFoundException('商品不存在');
+    return this.findById(tenantId, id);
   }
 
   async remove(tenantId: string, id: string) {
-    await this.findById(tenantId, id);
-    return this.prisma.product.update({ where: { id }, data: { enabled: false } });
+    const result = await this.prisma.product.updateMany({ where: { id, tenantId }, data: { enabled: false } });
+    if (result.count === 0) throw new NotFoundException('商品不存在');
+    return this.findById(tenantId, id);
   }
 }
