@@ -13,8 +13,20 @@ export default defineConfig({
   defineConstants: {
     API_BASE_URL: JSON.stringify('http://localhost:3000/api')
   },
-  mini: {},
+  mini: {
+    postcss: {
+      tailwindcss: {
+        enable: true,
+        config: './tailwind.config.js'
+      }
+    }
+  },
   h5: {
-    postcss: {}
+    postcss: {
+      tailwindcss: {
+        enable: true,
+        config: './tailwind.config.js'
+      }
+    }
   }
 });

@@ -1,4 +1,6 @@
-export default {
+import { defineAppConfig } from '@tarojs/taro';
+
+export default defineAppConfig({
   pages: [
     'pages/web/login/index',
     'pages/web/dashboard/index',
@@ -35,4 +37,4 @@ export default {
     navigationBarTitleText: '进销存',
     navigationBarTextStyle: 'black'
   }
-};
+});
