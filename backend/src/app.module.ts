@@ -10,6 +10,8 @@ import { CategoriesModule } from './modules/categories/categories.module';
 import { SuppliersModule } from './modules/suppliers/suppliers.module';
 import { CustomersModule } from './modules/customers/customers.module';
 import { WarehousesModule } from './modules/warehouses/warehouses.module';
+import { PurchasesModule } from './modules/purchases/purchases.module';
+import { SalesModule } from './modules/sales/sales.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 
 @Module({
@@ -24,6 +26,8 @@ import { AllExceptionsFilter } from './common/filters/http-exception.filter';
     SuppliersModule,
     CustomersModule,
     WarehousesModule,
+    PurchasesModule,
+    SalesModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },
