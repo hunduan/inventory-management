@@ -14,6 +14,7 @@ export default defineAppConfig({
     'pages/web/inventory/stocktake',
     'pages/web/inventory/transfer',
     'pages/web/products/index',
+    'pages/web/products/new',
     'pages/web/categories/index',
     'pages/web/suppliers/index',
     'pages/web/customers/index',
