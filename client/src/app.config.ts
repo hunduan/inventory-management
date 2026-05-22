@@ -1,28 +1,18 @@
-import { defineAppConfig } from '@tarojs/taro';
-
-export default defineAppConfig({
+export default {
   pages: [
     'pages/web/login/index',
     'pages/web/dashboard/index',
     'pages/web/purchases/index',
     'pages/web/purchases/new',
-    'pages/web/purchases/[id]',
     'pages/web/sales/index',
     'pages/web/sales/new',
-    'pages/web/sales/[id]',
     'pages/web/inventory/index',
-    'pages/web/inventory/stocktake',
-    'pages/web/inventory/transfer',
     'pages/web/products/index',
     'pages/web/products/new',
     'pages/web/categories/index',
-    'pages/web/suppliers/index',
-    'pages/web/customers/index',
-    'pages/web/warehouses/index',
     'pages/web/reports/index',
     'pages/web/settings/index',
-    'pages/web/settings/users',
-    'pages/web/settings/roles',
+    'pages/web/register/index',
     'pages/mini/index/index',
     'pages/mini/scan/index',
     'pages/mini/voice/index',
@@ -38,4 +28,4 @@ export default defineAppConfig({
     navigationBarTitleText: '进销存',
     navigationBarTextStyle: 'black'
   }
-});
+};

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Input, Button, Modal } from '@tarojs/components';
+import { View, Text, Input } from '@tarojs/components';
 import AppShell from '../../../components/layout/app-shell';
 import { categoriesApi } from '../../../services/categories';
 import Taro from '@tarojs/taro';
@@ -87,75 +87,143 @@ export default function CategoriesPage() {
 
   return (
     <AppShell>
-      <View className="mb-4 flex items-center justify-between">
-        <Text className="text-2xl font-bold">分类管理</Text>
-        <Button className="bg-blue-600 text-white px-4 rounded-lg" onClick={openCreate}>新增分类</Button>
+      <View className="flex items-center justify-between mb-6">
+        <View>
+          <Text className="page-title">分类管理</Text>
+          <Text className="page-subtitle">共 {categories.length} 个分类</Text>
+        </View>
+        <View
+          className="px-5 py-2.5 rounded-lg cursor-pointer text-sm font-medium"
+          style={{ background: '#0f766e', color: 'white' }}
+          onClick={openCreate}
+        >
+          <Text>+ 新增分类</Text>
+        </View>
       </View>
 
-      <View className="bg-white rounded-lg shadow overflow-hidden">
-        <View className="flex p-4 bg-gray-50 font-bold border-b">
+      <View
+        className="rounded-xl overflow-hidden"
+        style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
+      >
+        <View className="table-header">
           <Text className="flex-1">名称</Text>
-          <Text className="flex-2">描述</Text>
-          <Text className="w-24">操作</Text>
+          <Text className="flex-[2]">描述</Text>
+          <Text className="w-28">操作</Text>
         </View>
-        {categories.map((cat) => (
-          <View key={cat.id} className="flex p-4 border-b items-center hover:bg-gray-50">
-            <Text className="flex-1">{cat.name}</Text>
-            <Text className="flex-2 text-gray-500">{cat.description || '-'}</Text>
-            <View className="w-24 flex gap-2">
-              <Button size="small" onClick={() => openEdit(cat)}>编辑</Button>
-              <Button size="small" className="bg-red-500 text-white" onClick={() => handleDelete(cat.id)}>删除</Button>
+
+        {loading && (
+          <View className="py-16 flex items-center justify-center">
+            <View className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <View key={i} className="loading-dot" style={{ width: 8, height: 8, borderRadius: 9999, background: '#0f766e' }} />
+              ))}
             </View>
           </View>
-        ))}
-        {categories.length === 0 && !loading && (
-          <View className="p-8 text-center text-gray-400">
-            <Text>暂无分类，点击上方按钮新增</Text>
+        )}
+
+        {!loading && categories.length === 0 && (
+          <View className="py-16 text-center">
+            <Text style={{ fontSize: 40, display: 'block' }}>📂</Text>
+            <Text className="text-base font-medium mt-3" style={{ color: '#57534e' }}>暂无分类</Text>
+            <Text className="text-sm mt-1" style={{ color: '#a8a29e' }}>点击右上角"新增分类"开始添加</Text>
+          </View>
+        )}
+
+        {!loading && categories.length > 0 && (
+          <View>
+            {categories.map((cat, idx) => (
+              <View
+                key={cat.id}
+                className="flex px-5 py-3.5 items-center text-sm"
+                style={{
+                  background: idx % 2 === 0 ? '#ffffff' : '#fafaf9',
+                  borderBottom: idx < categories.length - 1 ? '1px solid #f5f5f4' : 'none',
+                }}
+              >
+                <Text className="flex-1 font-medium" style={{ color: '#292524' }}>
+                  {cat.name}
+                </Text>
+                <Text className="flex-[2]" style={{ color: '#78716c' }}>
+                  {cat.description || '-'}
+                </Text>
+                <View className="w-28 flex gap-1.5">
+                  <View
+                    className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium"
+                    style={{ background: '#f0fdfa', color: '#0f766e' }}
+                    onClick={() => openEdit(cat)}
+                  >
+                    <Text>编辑</Text>
+                  </View>
+                  <View
+                    className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium"
+                    style={{ background: '#fef2f2', color: '#991b1b' }}
+                    onClick={() => handleDelete(cat.id)}
+                  >
+                    <Text>删除</Text>
+                  </View>
+                </View>
+              </View>
+            ))}
           </View>
         )}
       </View>
 
-      {/* Create/Edit Modal */}
+      {/* Modal */}
       {showModal && (
-        <View className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <View className="bg-white rounded-2xl p-6 w-full max-w-md mx-4">
-            <Text className="text-xl font-bold mb-4">{editId ? '编辑分类' : '新增分类'}</Text>
+        <View className="fixed inset-0 bg-black/40 flex items-center justify-center z-50">
+          <View
+            className="rounded-2xl p-6 w-full mx-4"
+            style={{
+              maxWidth: 400,
+              background: '#ffffff',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.15)',
+              border: '1px solid #e7e5e4',
+              animation: 'fadeInUp 0.2s ease',
+            }}
+          >
+            <Text className="text-lg font-bold mb-5" style={{ color: '#292524' }}>
+              {editId ? '编辑分类' : '新增分类'}
+            </Text>
 
-            <View className="space-y-4">
-              <View>
-                <Text className="text-sm text-gray-600 mb-1">分类名称 *</Text>
-                <Input
-                  className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-                  placeholder="请输入分类名称"
-                  value={formName}
-                  onInput={(e) => setFormName(e.detail.value)}
-                />
-              </View>
-              <View>
-                <Text className="text-sm text-gray-600 mb-1">描述</Text>
-                <Input
-                  className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-                  placeholder="请输入描述（选填）"
-                  value={formDesc}
-                  onInput={(e) => setFormDesc(e.detail.value)}
-                />
-              </View>
+            <View>
+              <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>
+                分类名称 <Text style={{ color: '#dc2626' }}>*</Text>
+              </Text>
+              <Input
+                className="input-field"
+                style={{ width: '100%', marginBottom: 16 }}
+                placeholder="请输入分类名称"
+                value={formName}
+                onInput={(e) => setFormName(e.detail.value)}
+              />
             </View>
 
-            <View className="flex gap-3 mt-6">
-              <Button
-                className="bg-gray-200 text-gray-700 rounded-lg py-3 flex-1"
+            <View>
+              <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>描述</Text>
+              <Input
+                className="input-field"
+                style={{ width: '100%', marginBottom: 24 }}
+                placeholder="请输入描述（选填）"
+                value={formDesc}
+                onInput={(e) => setFormDesc(e.detail.value)}
+              />
+            </View>
+
+            <View className="flex gap-3">
+              <View
+                className="flex-1 py-3 rounded-xl cursor-pointer text-sm font-medium text-center"
+                style={{ border: '1px solid #e7e5e4', color: '#57534e' }}
                 onClick={() => setShowModal(false)}
               >
-                取消
-              </Button>
-              <Button
-                className="bg-blue-600 text-white rounded-lg py-3 flex-1"
-                loading={submitting}
-                onClick={handleSubmit}
+                <Text>取消</Text>
+              </View>
+              <View
+                className="flex-1 py-3 rounded-xl cursor-pointer text-sm font-medium text-center"
+                style={{ background: submitting ? '#0d9488' : '#0f766e', color: 'white' }}
+                onClick={submitting ? undefined : handleSubmit}
               >
-                {editId ? '保存' : '创建'}
-              </Button>
+                <Text>{submitting ? '保存中...' : editId ? '保存' : '创建'}</Text>
+              </View>
             </View>
           </View>
         </View>

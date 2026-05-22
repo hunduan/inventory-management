@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Input, Button, Picker } from '@tarojs/components';
+import { View, Text, Input, Picker } from '@tarojs/components';
 import AppShell from '../../../components/layout/app-shell';
 import { productsApi } from '../../../services/products';
 import { categoriesApi } from '../../../services/categories';
@@ -21,8 +21,8 @@ export default function NewProductPage() {
       try {
         const res = await categoriesApi.list();
         setCategories(res.items || []);
-      } catch (err: any) {
-        // 分类加载失败不影响创建
+      } catch {
+        // non-critical
       }
     };
     loadCategories();
@@ -65,92 +65,142 @@ export default function NewProductPage() {
   return (
     <AppShell>
       <View className="max-w-lg mx-auto">
-        <Text className="text-2xl font-bold mb-6 block">新增商品</Text>
-
-        <View className="bg-white rounded-lg shadow p-6 space-y-4">
-          <View>
-            <Text className="text-sm text-gray-600 mb-1">商品名称 *</Text>
-            <Input
-              className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-              placeholder="请输入商品名称"
-              value={name}
-              onInput={(e) => setName(e.detail.value)}
-            />
+        {/* Page Header */}
+        <View className="flex items-center gap-3 mb-6">
+          <View
+            className="w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer"
+            style={{ background: '#f5f5f4', border: '1px solid #e7e5e4' }}
+            onClick={() => Taro.navigateBack()}
+          >
+            <Text style={{ fontSize: 16, color: '#57534e' }}>←</Text>
           </View>
-
           <View>
-            <Text className="text-sm text-gray-600 mb-1">条码</Text>
-            <Input
-              className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-              placeholder="请输入条码（选填）"
-              value={barcode}
-              onInput={(e) => setBarcode(e.detail.value)}
-            />
+            <Text className="page-title">新增商品</Text>
+            <Text className="page-subtitle">填写商品信息</Text>
           </View>
+        </View>
 
-          <View>
-            <Text className="text-sm text-gray-600 mb-1">单位 *</Text>
-            <Input
-              className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-              placeholder="例如：个、箱、kg"
-              value={unit}
-              onInput={(e) => setUnit(e.detail.value)}
-            />
-          </View>
-
-          <View>
-            <Text className="text-sm text-gray-600 mb-1">分类</Text>
-            {categories.length > 0 ? (
-              <Picker mode="selector" range={categoryNames} value={categoryIndex} onChange={handleCategoryChange}>
-                <View className="border border-gray-300 rounded-lg px-4 py-3 w-full text-gray-700">
-                  {categoryNames[categoryIndex] || '请选择分类'}
-                </View>
-              </Picker>
-            ) : (
+        {/* Form */}
+        <View
+          className="rounded-xl p-6"
+          style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
+        >
+          <View className="space-y-5">
+            <View>
+              <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>
+                商品名称 <Text style={{ color: '#dc2626' }}>*</Text>
+              </Text>
               <Input
-                className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-                placeholder="暂无分类，可留空"
-                disabled
+                className="input-field"
+                style={{ width: '100%' }}
+                placeholder="请输入商品名称"
+                value={name}
+                onInput={(e) => setName(e.detail.value)}
               />
-            )}
+            </View>
+
+            <View>
+              <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>条码</Text>
+              <Input
+                className="input-field"
+                style={{ width: '100%' }}
+                placeholder="请输入条码（选填）"
+                value={barcode}
+                onInput={(e) => setBarcode(e.detail.value)}
+              />
+            </View>
+
+            <View>
+              <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>
+                单位 <Text style={{ color: '#dc2626' }}>*</Text>
+              </Text>
+              <Input
+                className="input-field"
+                style={{ width: '100%' }}
+                placeholder="例如：个、箱、kg"
+                value={unit}
+                onInput={(e) => setUnit(e.detail.value)}
+              />
+            </View>
+
+            <View>
+              <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>分类</Text>
+              {categories.length > 0 ? (
+                <Picker mode="selector" range={categoryNames} value={categoryIndex} onChange={handleCategoryChange}>
+                  <View
+                    className="rounded-lg px-4 py-2.5"
+                    style={{
+                      border: '1px solid #e7e5e4',
+                      background: '#fafaf9',
+                      minHeight: 42,
+                      display: 'flex',
+                      alignItems: 'center',
+                    }}
+                  >
+                    <Text className="text-sm" style={{ color: categoryNames[categoryIndex] ? '#292524' : '#d6d3d1' }}>
+                      {categoryNames[categoryIndex] || '请选择分类'}
+                    </Text>
+                  </View>
+                </Picker>
+              ) : (
+                <View
+                  className="rounded-lg px-4 py-2.5"
+                  style={{ border: '1px solid #e7e5e4', background: '#fafaf9' }}
+                >
+                  <Text className="text-sm" style={{ color: '#d6d3d1' }}>暂无分类，可留空</Text>
+                </View>
+              )}
+            </View>
+
+            <View className="grid grid-cols-2 gap-4">
+              <View>
+                <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>
+                  售价 <Text style={{ color: '#dc2626' }}>*</Text>
+                </Text>
+                <Input
+                  className="input-field"
+                  style={{ width: '100%' }}
+                  placeholder="0.00"
+                  type="number"
+                  value={salePrice}
+                  onInput={(e) => setSalePrice(e.detail.value)}
+                />
+              </View>
+              <View>
+                <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>
+                  成本价 <Text style={{ color: '#dc2626' }}>*</Text>
+                </Text>
+                <Input
+                  className="input-field"
+                  style={{ width: '100%' }}
+                  placeholder="0.00"
+                  type="number"
+                  value={costPrice}
+                  onInput={(e) => setCostPrice(e.detail.value)}
+                />
+              </View>
+            </View>
           </View>
 
-          <View>
-            <Text className="text-sm text-gray-600 mb-1">售价 *</Text>
-            <Input
-              className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-              placeholder="请输入售价"
-              type="number"
-              value={salePrice}
-              onInput={(e) => setSalePrice(e.detail.value)}
-            />
-          </View>
-
-          <View>
-            <Text className="text-sm text-gray-600 mb-1">成本价 *</Text>
-            <Input
-              className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-              placeholder="请输入成本价"
-              type="number"
-              value={costPrice}
-              onInput={(e) => setCostPrice(e.detail.value)}
-            />
-          </View>
-
-          <View className="flex gap-3 pt-4">
-            <Button
-              className="bg-gray-200 text-gray-700 rounded-lg py-3 flex-1"
+          <View className="flex gap-3 pt-6 mt-6" style={{ borderTop: '1px solid #f5f5f4' }}>
+            <View
+              className="flex-1 py-3 rounded-xl cursor-pointer text-sm font-medium text-center"
+              style={{ border: '1px solid #e7e5e4', color: '#57534e' }}
               onClick={() => Taro.navigateBack()}
             >
-              取消
-            </Button>
-            <Button
-              className="bg-blue-600 text-white rounded-lg py-3 flex-1"
-              loading={loading}
-              onClick={handleSubmit}
+              <Text>取消</Text>
+            </View>
+            <View
+              className="flex-1 py-3 rounded-xl cursor-pointer text-sm font-medium text-center"
+              style={{
+                background: loading ? '#0d9488' : '#0f766e',
+                color: 'white',
+                opacity: loading ? 0.7 : 1,
+              }}
+              onClick={loading ? undefined : handleSubmit}
             >
-              保存
-            </Button>
+              <Text>{loading ? '保存中...' : '保存'}</Text>
+            </View>
           </View>
         </View>
       </View>

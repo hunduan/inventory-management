@@ -19,8 +19,8 @@ export class SalesService {
     const where: any = { tenantId };
     if (query.status) where.status = query.status;
 
-    const page = query.page || 1;
-    const limit = query.limit || 20;
+    const page = Number(query.page) || 1;
+    const limit = Number(query.limit) || 20;
     const [items, total] = await Promise.all([
       this.prisma.saleOrder.findMany({
         where,

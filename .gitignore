@@ -5,6 +5,10 @@ node_modules/
 dist/
 *.tsbuildinfo
 
+# Cache / temp
+.swc/
+.claude/
+
 # Environment files (keep .env.example tracked)
 .env
 .env.local

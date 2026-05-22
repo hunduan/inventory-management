@@ -29,4 +29,11 @@ export class InventoryController {
   async getLogs(@TenantId() tenantId: string, @Query() query: any) {
     return this.inventoryService.getLogs(tenantId, query);
   }
+
+  @Get('history')
+  @ApiOperation({ summary: '历史库存快照 — 查询指定日期的库存' })
+  @ApiQuery({ name: 'date', required: true, type: String, description: '日期 ISO 字符串' })
+  async getHistory(@TenantId() tenantId: string, @Query() query: any) {
+    return this.inventoryService.getHistory(tenantId, query);
+  }
 }

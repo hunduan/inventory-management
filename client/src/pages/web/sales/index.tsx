@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Input, Button, Picker } from '@tarojs/components';
+import { View, Text, Input, Picker } from '@tarojs/components';
 import AppShell from '../../../components/layout/app-shell';
 import { salesApi } from '../../../services/sales';
 import Taro from '@tarojs/taro';
@@ -11,11 +11,11 @@ const STATUS_LABELS: Record<string, string> = {
   DELIVERED: '已出库',
   CANCELLED: '已取消',
 };
-const STATUS_COLORS: Record<string, string> = {
-  DRAFT: 'bg-gray-100 text-gray-700',
-  CONFIRMED: 'bg-blue-100 text-blue-700',
-  DELIVERED: 'bg-green-100 text-green-700',
-  CANCELLED: 'bg-red-100 text-red-700',
+const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
+  DRAFT: { bg: '#f5f5f4', text: '#78716c', dot: '#a8a29e' },
+  CONFIRMED: { bg: '#f0f9ff', text: '#075985', dot: '#0284c7' },
+  DELIVERED: { bg: '#f0fdf4', text: '#166534', dot: '#16a34a' },
+  CANCELLED: { bg: '#fef2f2', text: '#991b1b', dot: '#dc2626' },
 };
 
 export default function SalesPage() {
@@ -63,74 +63,191 @@ export default function SalesPage() {
 
   return (
     <AppShell>
-      <View className="mb-4 flex gap-2 flex-wrap">
-        <Input
-          className="border rounded-lg px-4 py-2 flex-1 min-w-[160px]"
-          placeholder="搜索单号/客户..."
-          value={search}
-          onInput={(e) => setSearch(e.detail.value)}
-          onConfirm={handleSearch}
-        />
-        <Picker mode="selector" range={['全部', '草稿', '已确认', '已出库', '已取消']} value={statusIndex} onChange={(e) => setStatusIndex(Number(e.detail.value))}>
-          <View className="border rounded-lg px-4 py-2 bg-white min-w-[100px] text-center">
-            {['全部', '草稿', '已确认', '已出库', '已取消'][statusIndex]}
-          </View>
-        </Picker>
-        <Button className="bg-blue-600 text-white px-4 rounded-lg" onClick={handleSearch}>搜索</Button>
-        <Button className="bg-green-600 text-white px-4 rounded-lg" onClick={() => Taro.navigateTo({ url: '/pages/web/sales/new' })}>新增销售</Button>
+      <View className="flex items-center justify-between mb-6">
+        <View>
+          <Text className="page-title">销售管理</Text>
+          <Text className="page-subtitle">共 {total} 条销售订单</Text>
+        </View>
+        <View
+          className="px-5 py-2.5 rounded-lg cursor-pointer text-sm font-medium"
+          style={{ background: '#0f766e', color: 'white' }}
+          onClick={() => Taro.navigateTo({ url: '/pages/web/sales/new' })}
+        >
+          <Text>+ 新增销售</Text>
+        </View>
       </View>
 
-      <View className="bg-white rounded-lg shadow overflow-hidden">
-        <View className="flex p-4 bg-gray-50 font-bold border-b">
+      <View
+        className="rounded-xl p-5 mb-6"
+        style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
+      >
+        <View className="flex gap-3 items-center flex-wrap">
+          <View className="flex-1 min-w-[200px] relative">
+            <View
+              style={{
+                position: 'absolute',
+                left: 12,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                zIndex: 1,
+                pointerEvents: 'none',
+              }}
+            >
+              🔍
+            </View>
+            <Input
+              className="input-field"
+              style={{ paddingLeft: 36 }}
+              placeholder="搜索单号/客户..."
+              value={search}
+              onInput={(e) => setSearch(e.detail.value)}
+              onConfirm={handleSearch}
+            />
+          </View>
+
+          <Picker
+            mode="selector"
+            range={['全部', '草稿', '已确认', '已出库', '已取消']}
+            value={statusIndex}
+            onChange={(e) => setStatusIndex(Number(e.detail.value))}
+          >
+            <View
+              className="flex items-center gap-1 rounded-lg px-4 py-2.5 cursor-pointer"
+              style={{ border: '1px solid #e7e5e4', background: '#fafaf9', minWidth: 110 }}
+            >
+              <Text className="text-sm" style={{ color: '#78716c' }}>
+                {['全部', '草稿', '已确认', '已出库', '已取消'][statusIndex]}
+              </Text>
+              <Text style={{ fontSize: 10, color: '#a8a29e', marginLeft: 4 }}>▼</Text>
+            </View>
+          </Picker>
+
+          <View
+            className="px-5 py-2.5 rounded-lg cursor-pointer text-sm font-medium"
+            style={{ background: '#0f766e', color: 'white' }}
+            onClick={handleSearch}
+          >
+            <Text>搜索</Text>
+          </View>
+        </View>
+      </View>
+
+      <View
+        className="rounded-xl overflow-hidden"
+        style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
+      >
+        <View className="table-header">
           <Text className="flex-1">单号</Text>
           <Text className="flex-1">客户</Text>
           <Text className="flex-1">金额</Text>
-          <Text className="w-20">状态</Text>
+          <Text className="w-24">状态</Text>
           <Text className="flex-1">创建时间</Text>
-          <Text className="w-28">操作</Text>
+          <Text className="w-32">操作</Text>
         </View>
-        {orders.map((o) => (
-          <View key={o.id} className="flex p-4 border-b items-center hover:bg-gray-50">
-            <Text className="flex-1">{o.orderNo || '-'}</Text>
-            <Text className="flex-1">{o.customer?.name || o.customerName || '-'}</Text>
-            <Text className="flex-1">¥{Number(o.totalAmount || 0).toFixed(2)}</Text>
-            <Text className={`w-20 inline-block text-center text-xs font-medium px-2 py-1 rounded ${STATUS_COLORS[o.status] || 'bg-gray-100 text-gray-600'}`}>
-              {STATUS_LABELS[o.status] || o.status}
-            </Text>
-            <Text className="flex-1 text-sm text-gray-500">
-              {o.createdAt ? new Date(o.createdAt).toLocaleDateString('zh-CN') : '-'}
-            </Text>
-            <View className="w-28 flex gap-1">
-              {o.status === 'DRAFT' && (
-                <>
-                  <Button size="small" className="bg-blue-500 text-white" onClick={() => handleAction(o.id, 'confirm')}>确认</Button>
-                  <Button size="small" className="bg-red-500 text-white" onClick={() => handleAction(o.id, 'cancel')}>取消</Button>
-                </>
-              )}
-              {o.status === 'CONFIRMED' && (
-                <>
-                  <Button size="small" className="bg-green-500 text-white" onClick={() => handleAction(o.id, 'deliver')}>出库</Button>
-                  <Button size="small" className="bg-red-500 text-white" onClick={() => handleAction(o.id, 'cancel')}>取消</Button>
-                </>
-              )}
-              {(o.status === 'DELIVERED' || o.status === 'CANCELLED') && (
-                <Text className="text-gray-400 text-sm px-2">-</Text>
-              )}
+
+        {loading && (
+          <View className="py-16 flex items-center justify-center">
+            <View className="flex gap-1">
+              {[0, 1, 2].map((i) => (
+                <View key={i} className="loading-dot" style={{ width: 8, height: 8, borderRadius: 9999, background: '#0f766e' }} />
+              ))}
             </View>
           </View>
-        ))}
-        {orders.length === 0 && !loading && (
-          <View className="p-8 text-center text-gray-400">
-            <Text>暂无销售订单</Text>
+        )}
+
+        {!loading && orders.length === 0 && (
+          <View className="py-16 text-center">
+            <Text style={{ fontSize: 40, display: 'block' }}>📋</Text>
+            <Text className="text-base font-medium mt-3" style={{ color: '#57534e' }}>暂无销售订单</Text>
+            <Text className="text-sm mt-1" style={{ color: '#a8a29e' }}>点击右上角"新增销售"创建第一单</Text>
+          </View>
+        )}
+
+        {!loading && orders.length > 0 && (
+          <View>
+            {orders.map((o, idx) => {
+              const sc = STATUS_COLORS[o.status] || STATUS_COLORS.DRAFT;
+              return (
+                <View
+                  key={o.id}
+                  className="flex px-5 py-3.5 items-center text-sm"
+                  style={{
+                    background: idx % 2 === 0 ? '#ffffff' : '#fafaf9',
+                    borderBottom: idx < orders.length - 1 ? '1px solid #f5f5f4' : 'none',
+                  }}
+                >
+                  <Text className="flex-1 font-medium" style={{ color: '#292524' }}>
+                    {o.orderNo || '-'}
+                  </Text>
+                  <Text className="flex-1" style={{ color: '#78716c' }}>
+                    {o.customer?.name || o.customerName || '-'}
+                  </Text>
+                  <Text className="flex-1 font-semibold" style={{ color: '#292524' }}>
+                    ¥{Number(o.totalAmount || 0).toFixed(2)}
+                  </Text>
+                  <View
+                    className="w-24 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
+                    style={{ background: sc.bg, color: sc.text }}
+                  >
+                    <View style={{ width: 5, height: 5, borderRadius: 9999, background: sc.dot }} />
+                    <Text>{STATUS_LABELS[o.status] || o.status}</Text>
+                  </View>
+                  <Text className="flex-1" style={{ color: '#a8a29e', fontSize: 12 }}>
+                    {o.createdAt ? new Date(o.createdAt).toLocaleDateString('zh-CN') : '-'}
+                  </Text>
+                  <View className="w-32 flex gap-1.5">
+                    {o.status === 'DRAFT' && (
+                      <>
+                        <View className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium" style={{ background: '#f0f9ff', color: '#075985' }} onClick={() => handleAction(o.id, 'confirm')}><Text>确认</Text></View>
+                        <View className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium" style={{ background: '#fef2f2', color: '#991b1b' }} onClick={() => handleAction(o.id, 'cancel')}><Text>取消</Text></View>
+                      </>
+                    )}
+                    {o.status === 'CONFIRMED' && (
+                      <>
+                        <View className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium" style={{ background: '#f0fdf4', color: '#166534' }} onClick={() => handleAction(o.id, 'deliver')}><Text>出库</Text></View>
+                        <View className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium" style={{ background: '#fef2f2', color: '#991b1b' }} onClick={() => handleAction(o.id, 'cancel')}><Text>取消</Text></View>
+                      </>
+                    )}
+                    {(o.status === 'DELIVERED' || o.status === 'CANCELLED') && (
+                      <Text className="text-xs px-2" style={{ color: '#d6d3d1' }}>-</Text>
+                    )}
+                  </View>
+                </View>
+              );
+            })}
           </View>
         )}
       </View>
 
-      <View className="flex justify-center items-center gap-2 mt-4">
-        <Button disabled={page <= 1} onClick={() => setPage(page - 1)}>上一页</Button>
-        <Text className="text-sm text-gray-500">第 {page} / {totalPages || 1} 页 (共 {total} 条)</Text>
-        <Button disabled={page >= totalPages} onClick={() => setPage(page + 1)}>下一页</Button>
-      </View>
+      {totalPages > 1 && (
+        <View className="flex justify-center items-center gap-2 mt-6">
+          <View
+            className="px-4 py-2 rounded-lg cursor-pointer text-sm"
+            style={{
+              border: page <= 1 ? '1px solid #e7e5e4' : '1px solid #d6d3d1',
+              background: page <= 1 ? '#f5f5f4' : '#ffffff',
+              color: page <= 1 ? '#d6d3d1' : '#57534e',
+            }}
+            onClick={() => page > 1 && setPage(page - 1)}
+          >
+            <Text>← 上一页</Text>
+          </View>
+          <Text className="text-xs" style={{ color: '#a8a29e' }}>
+            第 {page} / {totalPages || 1} 页 · 共 {total} 条
+          </Text>
+          <View
+            className="px-4 py-2 rounded-lg cursor-pointer text-sm"
+            style={{
+              border: page >= totalPages ? '1px solid #e7e5e4' : '1px solid #d6d3d1',
+              background: page >= totalPages ? '#f5f5f4' : '#ffffff',
+              color: page >= totalPages ? '#d6d3d1' : '#57534e',
+            }}
+            onClick={() => page < totalPages && setPage(page + 1)}
+          >
+            <Text>下一页 →</Text>
+          </View>
+        </View>
+      )}
     </AppShell>
   );
 }
