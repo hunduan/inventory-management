@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, Picker, ScrollView } from '@tarojs/components';
+import { View, Text, Picker } from '@tarojs/components';
 import { inventoryApi } from '../../../services/inventory';
 import { warehousesApi } from '../../../services/warehouses';
 import Taro from '@tarojs/taro';
@@ -44,7 +44,7 @@ export default function MiniInventoryPage() {
   const warehouseNames = warehouses.map((w: any) => w.name);
 
   return (
-    <ScrollView className="min-h-screen" style={{ backgroundColor: '#f5f5f4' }}>
+    <View style={{ backgroundColor: '#f5f5f4', minHeight: '100vh' }}>
       <View style={{ backgroundColor: '#0f766e', padding: '20px 20px 16px' }}>
         <Text className="text-lg font-bold" style={{ color: '#ffffff' }} onClick={() => Taro.navigateBack()}>
           ← 库存查询
@@ -87,6 +87,6 @@ export default function MiniInventoryPage() {
           })
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 }

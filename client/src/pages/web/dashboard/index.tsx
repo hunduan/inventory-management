@@ -6,6 +6,8 @@ import { salesApi } from '../../../services/sales';
 import { inventoryApi } from '../../../services/inventory';
 import { reportsApi } from '../../../services/reports';
 import Taro from '@tarojs/taro';
+import KpiCard from '../../../components/ui/KpiCard';
+import EmptyState from '../../../components/ui/EmptyState';
 
 export default function DashboardPage() {
   const [userName, setUserName] = useState('');
@@ -53,14 +55,6 @@ export default function DashboardPage() {
   };
 
   useEffect(() => { loadDashboard(); }, []);
-
-  const KpiCard = ({ label, value, color, subtitle }: { label: string; value: string; color: string; subtitle?: string }) => (
-    <View className="card p-5">
-      <Text className="text-sm" style={{ color: '#78716c', marginBottom: 4 }}>{label}</Text>
-      <Text className="text-2xl font-bold" style={{ color }}>{value}</Text>
-      {subtitle && <Text className="text-xs mt-1" style={{ color: '#a8a29e' }}>{subtitle}</Text>}
-    </View>
-  );
 
   const QuickAction = ({ label, path }: { label: string; path: string }) => (
     <View
@@ -126,9 +120,7 @@ export default function DashboardPage() {
             </Text>
           </View>
           {recentPurchases.length === 0 ? (
-            <View className="py-10 text-center">
-              <Text className="text-sm" style={{ color: '#a8a29e' }}>暂无采购记录</Text>
-            </View>
+            <EmptyState message="暂无采购记录" />
           ) : (
             recentPurchases.map((o, idx) => (
               <View
@@ -159,9 +151,7 @@ export default function DashboardPage() {
             </Text>
           </View>
           {recentSales.length === 0 ? (
-            <View className="py-10 text-center">
-              <Text className="text-sm" style={{ color: '#a8a29e' }}>暂无销售记录</Text>
-            </View>
+            <EmptyState message="暂无销售记录" />
           ) : (
             recentSales.map((o, idx) => (
               <View

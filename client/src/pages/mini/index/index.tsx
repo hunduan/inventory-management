@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, ScrollView } from '@tarojs/components';
+import { View, Text } from '@tarojs/components';
 import { purchasesApi } from '../../../services/purchases';
 import Taro from '@tarojs/taro';
 
@@ -19,7 +19,7 @@ export default function MiniIndexPage() {
   const goto = (url: string) => Taro.navigateTo({ url });
 
   return (
-    <ScrollView className="min-h-screen" style={{ backgroundColor: '#f5f5f4' }}>
+    <View style={{ backgroundColor: '#f5f5f4', minHeight: '100vh' }}>
       {/* Header */}
       <View style={{ backgroundColor: '#0f766e', padding: '24px 20px 20px' }}>
         <Text className="text-xl font-bold" style={{ color: '#ffffff' }}>进销存</Text>
@@ -99,6 +99,6 @@ export default function MiniIndexPage() {
           ))
         )}
       </View>
-    </ScrollView>
+    </View>
   );
 }

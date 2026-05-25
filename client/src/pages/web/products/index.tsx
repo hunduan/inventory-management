@@ -3,6 +3,7 @@ import { View, Text, Input } from '@tarojs/components';
 import AppShell from '../../../components/layout/app-shell';
 import { productsApi } from '../../../services/products';
 import Taro from '@tarojs/taro';
+import EmptyState from '../../../components/ui/EmptyState';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -80,13 +81,9 @@ export default function ProductsPage() {
         </View>
 
         {loading ? (
-          <View className="py-12 text-center">
-            <Text className="text-sm" style={{ color: '#a8a29e' }}>加载中...</Text>
-          </View>
+          <EmptyState message="加载中..." />
         ) : products.length === 0 ? (
-          <View className="py-12 text-center">
-            <Text className="text-sm" style={{ color: '#a8a29e' }}>暂无商品</Text>
-          </View>
+          <EmptyState message="暂无商品" />
         ) : (
           products.map((p, idx) => (
             <View

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { View, Text, Input, ScrollView } from '@tarojs/components';
+import { View, Text, Input } from '@tarojs/components';
 import { productsApi } from '../../../services/products';
 import Taro from '@tarojs/taro';
 
@@ -20,7 +20,7 @@ export default function MiniProductsPage() {
   };
 
   return (
-    <ScrollView className="min-h-screen" style={{ backgroundColor: '#f5f5f4' }}>
+      <View style={{ backgroundColor: '#f5f5f4', minHeight: '100vh' }}>
       <View style={{ backgroundColor: '#0f766e', padding: '20px 20px 16px' }}>
         <Text className="text-lg font-bold" style={{ color: '#ffffff' }} onClick={() => Taro.navigateBack()}>
           ← 商品列表
@@ -62,6 +62,6 @@ export default function MiniProductsPage() {
           ))
         )}
       </View>
-    </ScrollView>
+      </View>
   );
 }
