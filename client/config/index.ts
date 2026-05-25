@@ -15,7 +15,7 @@ export default defineConfig({
   alias: {
     '@': './src',
   },
-  plugins: ['@tarojs/plugin-platform-h5'],
+  plugins: ['@tarojs/plugin-platform-h5', '@tarojs/plugin-platform-weapp'],
   compiler: 'webpack5',
   defineConstants: {
     API_BASE_URL: JSON.stringify('http://localhost:3000/api'),

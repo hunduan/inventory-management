@@ -32,16 +32,14 @@ export default function SettingsPage() {
   return (
     <AppShell>
       <View className="max-w-2xl mx-auto">
+        {/* Header */}
         <View className="mb-6">
-          <Text className="page-title">系统设置</Text>
-          <Text className="page-subtitle">管理账户和系统配置</Text>
+          <Text className="text-xl font-bold" style={{ color: '#1c1917' }}>系统设置</Text>
+          <Text className="text-sm mt-1" style={{ color: '#a8a29e' }}>管理账户和系统配置</Text>
         </View>
 
         {/* Tenant Profile */}
-        <View
-          className="rounded-xl p-6 mb-6"
-          style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
-        >
+        <View className="card p-5 mb-6">
           <View className="flex items-center gap-4 mb-6">
             <View
               style={{
@@ -60,12 +58,12 @@ export default function SettingsPage() {
               </Text>
             </View>
             <View>
-              <Text className="text-lg font-bold" style={{ color: '#292524' }}>{tenantName}</Text>
+              <Text className="text-base font-bold" style={{ color: '#1c1917' }}>{tenantName}</Text>
               <Text className="text-sm" style={{ color: '#a8a29e' }}>{user?.email || ''}</Text>
             </View>
           </View>
 
-          <View className="space-y-1">
+          <View>
             {[
               { label: '租户名称', value: tenantName },
               { label: '管理员邮箱', value: user?.email || '-' },
@@ -73,36 +71,32 @@ export default function SettingsPage() {
             ].map((item) => (
               <View
                 key={item.label}
-                className="flex items-center justify-between py-3.5 px-4 rounded-lg"
-                style={{ background: '#fafaf9' }}
+                className="flex items-center justify-between py-3"
+                style={{ borderBottom: '1px solid #f5f5f4' }}
               >
                 <Text className="text-sm" style={{ color: '#78716c' }}>{item.label}</Text>
-                <Text className="text-sm font-medium" style={{ color: '#292524' }}>{item.value}</Text>
+                <Text className="text-sm font-medium" style={{ color: '#1c1917' }}>{item.value}</Text>
               </View>
             ))}
           </View>
         </View>
 
-        {/* Future Settings */}
-        <View
-          className="rounded-xl p-6 mb-6"
-          style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
-        >
-          <Text className="text-base font-semibold mb-2" style={{ color: '#292524' }}>更多设置</Text>
+        {/* More Settings */}
+        <View className="card p-5 mb-6">
+          <Text className="text-sm font-semibold mb-2" style={{ color: '#1c1917' }}>更多设置</Text>
           <View className="py-6 text-center">
-            <Text style={{ fontSize: 32, display: 'block', marginBottom: 8 }}>⚙️</Text>
             <Text className="text-sm" style={{ color: '#a8a29e' }}>更多设置功能即将上线</Text>
           </View>
         </View>
 
         {/* Logout */}
         <View
-          className="w-full py-3.5 rounded-xl cursor-pointer text-sm font-semibold text-center"
+          className="w-full py-3 px-4 cursor-pointer text-sm font-semibold text-center"
           style={{
-            background: '#fef2f2',
+            backgroundColor: '#fef2f2',
             border: '1px solid #fecaca',
             color: '#dc2626',
-            transition: 'all 0.2s ease',
+            borderRadius: '8px',
           }}
           onClick={handleLogout}
         >

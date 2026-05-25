@@ -62,41 +62,37 @@ export default function ReportsPage() {
   return (
     <AppShell>
       <View className="max-w-4xl mx-auto">
+        {/* Header */}
         <View className="mb-6">
-          <Text className="page-title">报表统计</Text>
-          <Text className="page-subtitle">查看业务数据概览</Text>
+          <Text className="text-xl font-bold" style={{ color: '#1c1917' }}>报表统计</Text>
+          <Text className="text-sm mt-1" style={{ color: '#a8a29e' }}>查看业务数据概览</Text>
         </View>
 
         {/* Tabs */}
-        <View
-          className="rounded-xl p-1 mb-6 flex"
-          style={{ background: '#f5f5f4' }}
-        >
+        <View className="flex mb-6" style={{ borderBottom: '1px solid #e7e5e4' }}>
           {TABS.map((tab, idx) => (
             <View
               key={idx}
-              className="flex-1 py-2.5 text-center text-sm font-medium rounded-lg cursor-pointer transition-all"
+              className="px-5 py-3 text-sm cursor-pointer"
               style={{
-                background: activeTab === idx ? '#ffffff' : 'transparent',
                 color: activeTab === idx ? '#0f766e' : '#78716c',
-                boxShadow: activeTab === idx ? '0 1px 3px rgba(0,0,0,0.08)' : 'none',
+                fontWeight: activeTab === idx ? 600 : 400,
+                borderBottom: activeTab === idx ? '2px solid #0f766e' : '2px solid transparent',
+                marginBottom: -1,
               }}
               onClick={() => {
                 setActiveTab(idx);
                 setData(null);
               }}
             >
-              <Text>{tab}</Text>
+              {tab}
             </View>
           ))}
         </View>
 
-        {/* Date Range */}
-        <View
-          className="rounded-xl p-5 mb-6"
-          style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
-        >
-          <Text className="text-sm font-semibold mb-3" style={{ color: '#292524' }}>
+        {/* Date Range Filter */}
+        <View className="card p-4 mb-6">
+          <Text className="text-sm font-semibold mb-3" style={{ color: '#1c1917' }}>
             {TABS[activeTab]} - 日期范围
           </Text>
 
@@ -123,8 +119,8 @@ export default function ReportsPage() {
               />
             </View>
             <View
-              className="px-6 py-2.5 rounded-lg cursor-pointer text-sm font-medium mt-5"
-              style={{ background: '#0f766e', color: 'white' }}
+              className="px-4 py-2 cursor-pointer text-sm font-medium mt-5"
+              style={{ backgroundColor: '#0f766e', color: '#ffffff', borderRadius: '4px' }}
               onClick={loadReport}
             >
               <Text>查询</Text>
@@ -141,7 +137,7 @@ export default function ReportsPage() {
             ].map((btn) => (
               <View
                 key={btn.days}
-                className="px-4 py-1.5 rounded-lg cursor-pointer text-xs font-medium"
+                className="px-4 py-1.5 rounded cursor-pointer text-xs font-medium"
                 style={{ background: '#f5f5f4', color: '#57534e' }}
                 onClick={() => setQuickDate(btn.days)}
               >
@@ -156,7 +152,7 @@ export default function ReportsPage() {
           <View>
             {/* Summary Cards */}
             <View className="grid grid-cols-3 gap-4 mb-6">
-              <View className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}>
+              <View className="card p-4">
                 <Text className="text-xs font-medium mb-2" style={{ color: '#a8a29e' }}>
                   {activeTab === 0 ? '采购总额' : activeTab === 1 ? '销售总额' : '总收入'}
                 </Text>
@@ -164,7 +160,7 @@ export default function ReportsPage() {
                   ¥{Number(data.totalAmount || data.totalRevenue || 0).toFixed(2)}
                 </Text>
               </View>
-              <View className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}>
+              <View className="card p-4">
                 <Text className="text-xs font-medium mb-2" style={{ color: '#a8a29e' }}>
                   {activeTab === 2 ? '总成本' : '订单数'}
                 </Text>
@@ -172,7 +168,7 @@ export default function ReportsPage() {
                   {activeTab === 2 ? `¥${Number(data.totalCost || 0).toFixed(2)}` : (data.totalOrders || data.totalCount || 0)}
                 </Text>
               </View>
-              <View className="rounded-xl p-5" style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}>
+              <View className="card p-4">
                 <Text className="text-xs font-medium mb-2" style={{ color: '#a8a29e' }}>
                   {activeTab === 2 ? '利润' : '商品数'}
                 </Text>
@@ -186,7 +182,7 @@ export default function ReportsPage() {
 
             {/* Profit Rate */}
             {activeTab === 2 && data.totalRevenue && (
-              <View className="rounded-xl p-5 mb-6" style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}>
+              <View className="card p-4 mb-6">
                 <View className="flex items-center justify-between">
                   <Text className="text-sm" style={{ color: '#78716c' }}>利润率</Text>
                   <Text className="text-xl font-bold" style={{ color: '#16a34a' }}>
@@ -209,11 +205,11 @@ export default function ReportsPage() {
             )}
 
             {/* Detail Table */}
-            <View
-              className="rounded-xl overflow-hidden"
-              style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
-            >
-              <View className="table-header">
+            <View className="card overflow-hidden">
+              <View
+                className="flex px-5 py-3 items-center text-xs font-medium"
+                style={{ color: '#78716c', background: '#fafaf9', borderBottom: '1px solid #e7e5e4' }}
+              >
                 <Text className="flex-1">
                   {activeTab === 0 ? '供应商' : activeTab === 1 ? '客户' : '商品'}
                 </Text>
@@ -223,9 +219,7 @@ export default function ReportsPage() {
 
               {(!data.items || data.items.length === 0) ? (
                 <View className="py-16 text-center">
-                  <Text style={{ fontSize: 40, display: 'block' }}>📊</Text>
-                  <Text className="text-base font-medium mt-3" style={{ color: '#57534e' }}>暂无报表数据</Text>
-                  <Text className="text-sm mt-1" style={{ color: '#a8a29e' }}>选择一个日期范围后点击查询</Text>
+                  <Text className="text-sm" style={{ color: '#a8a29e' }}>暂无报表数据</Text>
                 </View>
               ) : (
                 <View>
@@ -234,17 +228,16 @@ export default function ReportsPage() {
                       key={idx}
                       className="flex px-5 py-3.5 items-center text-sm"
                       style={{
-                        background: idx % 2 === 0 ? '#ffffff' : '#fafaf9',
                         borderBottom: idx < data.items.length - 1 ? '1px solid #f5f5f4' : 'none',
                       }}
                     >
-                      <Text className="flex-1 font-medium" style={{ color: '#292524' }}>
+                      <Text className="flex-1 font-medium" style={{ color: '#1c1917' }}>
                         {item.name || item.productName || '-'}
                       </Text>
                       <Text className="w-24 text-right" style={{ color: '#78716c' }}>
                         {item.quantity || item.totalQuantity || 0}
                       </Text>
-                      <Text className="w-28 text-right font-medium" style={{ color: '#292524' }}>
+                      <Text className="w-28 text-right font-medium" style={{ color: '#1c1917' }}>
                         ¥{Number(item.amount || item.totalAmount || 0).toFixed(2)}
                       </Text>
                     </View>
@@ -258,11 +251,7 @@ export default function ReportsPage() {
         {/* Initial Empty State */}
         {!data && !loading && (
           <View className="py-20 text-center">
-            <Text style={{ fontSize: 56, display: 'block' }}>📊</Text>
-            <Text className="text-lg font-medium mt-4" style={{ color: '#57534e' }}>选择日期范围查看报表</Text>
-            <Text className="text-sm mt-1" style={{ color: '#a8a29e' }}>
-              选择 {TABS[activeTab]} 的起止日期并点击查询
-            </Text>
+            <Text className="text-sm" style={{ color: '#a8a29e' }}>选择日期范围查看报表</Text>
           </View>
         )}
       </View>

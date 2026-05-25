@@ -3,9 +3,7 @@ import { View, Text } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 
 export default function ScanPage() {
-  useEffect(() => {
-    scanCode();
-  }, []);
+  useEffect(() => { scanCode(); }, []);
 
   const scanCode = async () => {
     try {
@@ -13,31 +11,35 @@ export default function ScanPage() {
       const { productsApi } = await import('../../../services/products');
       const product = await productsApi.getByBarcode(res.result);
       if (product) {
-        Taro.navigateTo({
-          url: `/pages/mini/purchase/index?productId=${product.id}&name=${product.name}&barcode=${res.result}`,
-        });
+        Taro.navigateTo({ url: `/pages/mini/purchase/index?productId=${product.id}&name=${product.name}&barcode=${res.result}` });
       } else {
         Taro.showModal({
           title: '未找到商品',
           content: `条码 ${res.result} 未找到`,
-          success: () => {
-            Taro.navigateTo({ url: `/pages/mini/purchase/index?barcode=${res.result}` });
-          },
+          success: () => Taro.navigateTo({ url: `/pages/mini/purchase/index?barcode=${res.result}` }),
         });
       }
-    } catch (err) {
+    } catch {
       Taro.showToast({ title: '扫码失败', icon: 'none' });
       Taro.navigateBack();
     }
   };
 
   return (
-    <View className="flex flex-col items-center justify-center min-h-screen bg-black">
-      <Text className="text-white text-lg mb-4">正在扫描...</Text>
-      <View className="w-64 h-64 border-2 border-white rounded-lg relative overflow-hidden">
-        <View className="absolute top-1/2 left-0 right-0 h-0.5 bg-red-500" style={{ animation: 'pulse 1s infinite' }} />
+    <View className="min-h-screen flex items-center justify-center" style={{ backgroundColor: '#0f172a' }}>
+      <View className="items-center">
+        <View style={{ width: 48, height: 48, borderRadius: 10, backgroundColor: '#0f766e', alignItems: 'center', justifyContent: 'center', marginBottom: 16 }}>
+          <Text style={{ color: 'white', fontSize: 20 }}>📱</Text>
+        </View>
+        <Text className="text-base mb-4" style={{ color: '#f1f5f9' }}>正在扫描...</Text>
+        <View
+          className="items-center justify-center"
+          style={{ width: 200, height: 200, borderRadius: 12, border: '2px solid rgba(20,184,166,0.5)', position: 'relative' }}
+        >
+          <View style={{ width: '100%', height: 2, backgroundColor: '#14b8a6', position: 'absolute', top: '50%' }} />
+        </View>
+        <Text className="text-sm mt-6" style={{ color: '#94a3b8' }}>将条码对准扫描框</Text>
       </View>
-      <Text className="text-gray-400 text-sm mt-6">将条码对准扫描框</Text>
     </View>
   );
 }

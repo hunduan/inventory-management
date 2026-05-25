@@ -1,6 +1,10 @@
 import Taro from '@tarojs/taro';
 
-const BASE_URL = 'http://localhost:3000/api';
+const BASE_URL = process.env.API_BASE_URL as string || 'http://localhost:3000/api';
+
+const LOGIN_PATH = process.env.TARO_ENV === 'weapp'
+  ? '/pages/mini/login/index'
+  : '/pages/web/login/index';
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
@@ -28,7 +32,7 @@ export async function request<T = any>(url: string, options: RequestOptions = {}
   } catch (err: any) {
     if (err.errMsg?.includes('401') || err.statusCode === 401) {
       Taro.removeStorageSync('token');
-      Taro.navigateTo({ url: '/pages/web/login/index' });
+      Taro.reLaunch({ url: LOGIN_PATH });
     }
     throw err;
   }

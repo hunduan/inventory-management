@@ -13,6 +13,7 @@ export default {
     'pages/web/reports/index',
     'pages/web/settings/index',
     'pages/web/register/index',
+    'pages/mini/login/index',
     'pages/mini/index/index',
     'pages/mini/scan/index',
     'pages/mini/voice/index',
@@ -21,6 +22,8 @@ export default {
     'pages/mini/sale/index',
     'pages/mini/orders/list',
     'pages/mini/orders/detail',
+    'pages/mini/products/index',
+    'pages/mini/inventory/index',
   ],
   window: {
     backgroundTextStyle: 'light',

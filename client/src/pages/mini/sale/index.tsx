@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Input, Button, Picker } from '@tarojs/components';
+import { View, Text, Input, Picker } from '@tarojs/components';
 import { salesApi } from '../../../services/sales';
 import { customersApi } from '../../../services/customers';
 import { warehousesApi } from '../../../services/warehouses';
@@ -31,17 +31,14 @@ export default function MiniSalePage() {
         setProducts(productsRes.items || []);
         setCustomers(customersRes.items || []);
         setWarehouses(warehousesRes.items || []);
-      } catch (err: any) {
-        Taro.showToast({ title: '加载数据失败', icon: 'none' });
-      }
+      } catch { Taro.showToast({ title: '加载数据失败', icon: 'none' }); }
     };
     loadData();
   }, []);
 
-  // Pre-fill from URL params (from scan/voice)
   useEffect(() => {
     const params = Taro.getCurrentInstance().router?.params;
-    if (params) {
+    if (params && products.length > 0) {
       if (params.productId && params.name) {
         const p = products.find((x: any) => x.id === params.productId);
         if (p) setSelectedProduct(p);
@@ -59,179 +56,131 @@ export default function MiniSalePage() {
   );
 
   const handleSubmit = async () => {
-    if (!selectedProduct) {
-      Taro.showToast({ title: '请选择商品', icon: 'none' });
-      return;
-    }
-    if (!quantity || parseFloat(quantity) <= 0) {
-      Taro.showToast({ title: '请输入有效数量', icon: 'none' });
-      return;
-    }
-
+    if (!selectedProduct) { Taro.showToast({ title: '请选择商品', icon: 'none' }); return; }
+    if (!quantity || parseFloat(quantity) <= 0) { Taro.showToast({ title: '请输入有效数量', icon: 'none' }); return; }
     setLoading(true);
     try {
       await salesApi.create({
         customerId: customers[customerIndex]?.id || undefined,
         warehouseId: warehouses[warehouseIndex]?.id || undefined,
         remark: remark || undefined,
-        items: [{
-          productId: selectedProduct.id,
-          quantity: parseFloat(quantity),
-          unitPrice: parseFloat(unitPrice),
-        }],
+        items: [{ productId: selectedProduct.id, quantity: parseFloat(quantity), unitPrice: parseFloat(unitPrice) }],
       });
       Taro.showToast({ title: '销售单已创建', icon: 'success' });
       Taro.navigateBack();
     } catch (err: any) {
       Taro.showToast({ title: err.message || '创建失败', icon: 'none' });
-    } finally {
-      setLoading(false);
-    }
+    } finally { setLoading(false); }
   };
 
   const customerNames = customers.map((c: any) => c.name);
   const warehouseNames = warehouses.map((w: any) => w.name);
 
   return (
-    <View className="min-h-screen bg-gray-50">
-      <View className="bg-white px-5 py-4 flex items-center border-b border-gray-100">
-        <Text className="text-lg font-bold text-gray-800">快速销售出库</Text>
+    <View className="min-h-screen" style={{ backgroundColor: '#f5f5f4' }}>
+      <View style={{ backgroundColor: '#0f766e', padding: '20px 20px 16px' }}>
+        <Text className="text-lg font-bold" style={{ color: '#ffffff' }} onClick={() => Taro.navigateBack()}>
+          ← 销售出库
+        </Text>
       </View>
 
-      <View className="p-4 space-y-4">
-        {/* Product Search / Select */}
-        <View className="bg-white rounded-xl shadow-sm p-4">
-          <Text className="text-sm text-gray-600 mb-2">商品</Text>
+      <View className="p-4" style={{ gap: 12 }}>
+        {/* Product */}
+        <View className="card p-4">
+          <Text className="text-sm mb-2" style={{ color: '#57534e', fontWeight: 500 }}>商品</Text>
           {showProductPicker ? (
             <View>
-              <Input
-                className="border border-gray-300 rounded-lg px-4 py-3 w-full mb-2"
-                placeholder="搜索商品名称或条码"
-                value={productSearch}
-                onInput={(e) => setProductSearch(e.detail.value)}
-              />
-              <View className="max-h-48 overflow-y-auto border border-gray-200 rounded-lg">
+              <Input className="input-field mb-2" placeholder="搜索商品名称或条码" value={productSearch} onInput={(e) => setProductSearch(e.detail.value)} />
+              <View className="overflow-y-auto" style={{ maxHeight: 180, border: '1px solid #e7e5e4', borderRadius: 6 }}>
                 {filteredProducts.length === 0 ? (
-                  <Text className="p-3 text-gray-400 text-sm">无匹配商品</Text>
+                  <Text className="text-sm p-3" style={{ color: '#a8a29e' }}>无匹配商品</Text>
                 ) : (
                   filteredProducts.map((p: any) => (
                     <View
                       key={p.id}
-                      className={`p-3 border-b border-gray-100 last:border-b-0 ${selectedProduct?.id === p.id ? 'bg-blue-50' : ''}`}
-                      onClick={() => {
-                        setSelectedProduct(p);
-                        setUnitPrice(String(p.price || 0));
-                        setShowProductPicker(false);
-                      }}
+                      className="p-3"
+                      style={{ borderBottom: '1px solid #f5f5f4', backgroundColor: selectedProduct?.id === p.id ? '#f0fdfa' : 'transparent' }}
+                      onClick={() => { setSelectedProduct(p); setUnitPrice(String(p.price || 0)); setShowProductPicker(false); }}
                     >
-                      <Text className="font-medium text-gray-800">{p.name}</Text>
-                      <Text className="text-xs text-gray-400">{p.barcode || '-'}</Text>
+                      <Text className="text-sm font-medium" style={{ color: '#1c1917' }}>{p.name}</Text>
+                      <Text className="text-xs mt-0.5" style={{ color: '#a8a29e' }}>{p.barcode || '-'}</Text>
                     </View>
                   ))
                 )}
               </View>
-              <Button className="text-sm text-gray-500 mt-2 bg-transparent" onClick={() => setShowProductPicker(false)}>取消</Button>
+              <Text className="text-xs mt-2" style={{ color: '#0f766e' }} onClick={() => setShowProductPicker(false)}>取消</Text>
             </View>
           ) : (
-            <View
-              className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-              onClick={() => setShowProductPicker(true)}
-            >
-              <Text className={selectedProduct ? 'text-gray-800' : 'text-gray-400'}>
+            <View className="input-field" onClick={() => setShowProductPicker(true)}>
+              <Text className="text-sm" style={{ color: selectedProduct ? '#1c1917' : '#d6d3d1' }}>
                 {selectedProduct ? selectedProduct.name : '点击选择商品'}
               </Text>
             </View>
           )}
         </View>
 
-        {/* Quantity */}
-        <View className="bg-white rounded-xl shadow-sm p-4">
-          <Text className="text-sm text-gray-600 mb-2">数量</Text>
-          <Input
-            className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-            type="number"
-            value={quantity}
-            onInput={(e) => setQuantity(e.detail.value)}
-            placeholder="请输入数量"
-          />
+        <View className="flex" style={{ flexDirection: 'row', gap: 12 }}>
+          <View className="card p-4" style={{ flex: 1 }}>
+            <Text className="text-sm mb-2" style={{ color: '#57534e', fontWeight: 500 }}>数量</Text>
+            <Input className="input-field" type="number" value={quantity} onInput={(e) => setQuantity(e.detail.value)} placeholder="数量" />
+          </View>
+          <View className="card p-4" style={{ flex: 1 }}>
+            <Text className="text-sm mb-2" style={{ color: '#57534e', fontWeight: 500 }}>单价</Text>
+            <Input className="input-field" type="number" value={unitPrice} onInput={(e) => setUnitPrice(e.detail.value)} placeholder="单价" />
+          </View>
         </View>
 
-        {/* Unit Price */}
-        <View className="bg-white rounded-xl shadow-sm p-4">
-          <Text className="text-sm text-gray-600 mb-2">单价 (元)</Text>
-          <Input
-            className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-            type="number"
-            value={unitPrice}
-            onInput={(e) => setUnitPrice(e.detail.value)}
-            placeholder="请输入单价"
-          />
-        </View>
-
-        {/* Customer */}
-        <View className="bg-white rounded-xl shadow-sm p-4">
-          <Text className="text-sm text-gray-600 mb-2">客户</Text>
+        <View className="card p-4">
+          <Text className="text-sm mb-2" style={{ color: '#57534e', fontWeight: 500 }}>客户</Text>
           {customers.length > 0 ? (
             <Picker mode="selector" range={customerNames} value={customerIndex} onChange={(e) => setCustomerIndex(Number(e.detail.value))}>
-              <View className="border border-gray-300 rounded-lg px-4 py-3 w-full text-gray-700">
-                {customerNames[customerIndex] || '请选择客户'}
+              <View className="input-field">
+                <Text className="text-sm" style={{ color: '#1c1917' }}>{customerNames[customerIndex] || '请选择'}</Text>
               </View>
             </Picker>
           ) : (
-            <Input className="border border-gray-300 rounded-lg px-4 py-3 w-full" placeholder="暂无客户" disabled />
+            <Input className="input-field" placeholder="暂无客户" disabled />
           )}
         </View>
 
-        {/* Warehouse */}
-        <View className="bg-white rounded-xl shadow-sm p-4">
-          <Text className="text-sm text-gray-600 mb-2">仓库</Text>
+        <View className="card p-4">
+          <Text className="text-sm mb-2" style={{ color: '#57534e', fontWeight: 500 }}>仓库</Text>
           {warehouses.length > 0 ? (
             <Picker mode="selector" range={warehouseNames} value={warehouseIndex} onChange={(e) => setWarehouseIndex(Number(e.detail.value))}>
-              <View className="border border-gray-300 rounded-lg px-4 py-3 w-full text-gray-700">
-                {warehouseNames[warehouseIndex] || '请选择仓库'}
+              <View className="input-field">
+                <Text className="text-sm" style={{ color: '#1c1917' }}>{warehouseNames[warehouseIndex] || '请选择'}</Text>
               </View>
             </Picker>
           ) : (
-            <Input className="border border-gray-300 rounded-lg px-4 py-3 w-full" placeholder="暂无仓库" disabled />
+            <Input className="input-field" placeholder="暂无仓库" disabled />
           )}
         </View>
 
-        {/* Remark */}
-        <View className="bg-white rounded-xl shadow-sm p-4">
-          <Text className="text-sm text-gray-600 mb-2">备注</Text>
-          <Input
-            className="border border-gray-300 rounded-lg px-4 py-3 w-full"
-            placeholder="选填"
-            value={remark}
-            onInput={(e) => setRemark(e.detail.value)}
-          />
+        <View className="card p-4">
+          <Text className="text-sm mb-2" style={{ color: '#57534e', fontWeight: 500 }}>备注</Text>
+          <Input className="input-field" placeholder="选填" value={remark} onInput={(e) => setRemark(e.detail.value)} />
         </View>
 
-        {/* Total Display */}
-        <View className="bg-white rounded-xl shadow-sm p-4">
-          <View className="flex items-center justify-between">
-            <Text className="text-gray-600">合计金额</Text>
-            <Text className="text-xl font-bold text-orange-600">
+        <View className="card p-4">
+          <View className="flex items-center justify-between" style={{ flexDirection: 'row' }}>
+            <Text className="text-sm" style={{ color: '#78716c' }}>合计</Text>
+            <Text className="text-lg font-bold" style={{ color: '#d97706' }}>
               ¥{((parseFloat(quantity) || 0) * (parseFloat(unitPrice) || 0)).toFixed(2)}
             </Text>
           </View>
         </View>
 
-        {/* Actions */}
-        <View className="flex flex-row gap-3 pt-2">
-          <Button
-            className="bg-gray-200 text-gray-700 rounded-xl py-3 flex-1"
-            onClick={() => Taro.navigateBack()}
+        <View className="flex" style={{ flexDirection: 'row', gap: 12, paddingTop: 4 }}>
+          <View className="flex-1 py-3 rounded flex items-center justify-center" style={{ border: '1px solid #e7e5e4' }} onClick={() => Taro.navigateBack()}>
+            <Text className="text-sm" style={{ color: '#57534e' }}>取消</Text>
+          </View>
+          <View
+            className="flex-1 py-3 rounded flex items-center justify-center"
+            style={{ backgroundColor: loading ? '#b45309' : '#d97706', opacity: loading ? 0.6 : 1 }}
+            onClick={loading ? undefined : handleSubmit}
           >
-            取消
-          </Button>
-          <Button
-            className="bg-orange-600 text-white rounded-xl py-3 flex-1"
-            loading={loading}
-            onClick={handleSubmit}
-          >
-            创建销售单
-          </Button>
+            <Text className="text-sm font-medium text-white">{loading ? '创建中...' : '创建销售单'}</Text>
+          </View>
         </View>
       </View>
     </View>

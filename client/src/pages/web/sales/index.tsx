@@ -11,11 +11,11 @@ const STATUS_LABELS: Record<string, string> = {
   DELIVERED: '已出库',
   CANCELLED: '已取消',
 };
-const STATUS_COLORS: Record<string, { bg: string; text: string; dot: string }> = {
-  DRAFT: { bg: '#f5f5f4', text: '#78716c', dot: '#a8a29e' },
-  CONFIRMED: { bg: '#f0f9ff', text: '#075985', dot: '#0284c7' },
-  DELIVERED: { bg: '#f0fdf4', text: '#166534', dot: '#16a34a' },
-  CANCELLED: { bg: '#fef2f2', text: '#991b1b', dot: '#dc2626' },
+const STATUS_STYLE: Record<string, { bg: string; text: string }> = {
+  DRAFT: { bg: '#f5f5f4', text: '#78716c' },
+  CONFIRMED: { bg: '#f0f9ff', text: '#075985' },
+  DELIVERED: { bg: '#f0fdf4', text: '#166534' },
+  CANCELLED: { bg: '#fef2f2', text: '#dc2626' },
 };
 
 export default function SalesPage() {
@@ -44,8 +44,6 @@ export default function SalesPage() {
 
   useEffect(() => { loadOrders(); }, [page, statusIndex]);
 
-  const handleSearch = () => { setPage(1); loadOrders(); };
-
   const handleAction = async (id: string, action: 'confirm' | 'deliver' | 'cancel') => {
     const actionLabels: Record<string, string> = { confirm: '确认', deliver: '出库', cancel: '取消' };
     try {
@@ -63,188 +61,108 @@ export default function SalesPage() {
 
   return (
     <AppShell>
+      {/* Header */}
       <View className="flex items-center justify-between mb-6">
         <View>
-          <Text className="page-title">销售管理</Text>
-          <Text className="page-subtitle">共 {total} 条销售订单</Text>
+          <Text className="text-xl font-bold" style={{ color: '#1c1917' }}>销售管理</Text>
+          <Text className="text-sm mt-0.5" style={{ color: '#a8a29e' }}>共 {total} 条销售订单</Text>
         </View>
         <View
-          className="px-5 py-2.5 rounded-lg cursor-pointer text-sm font-medium"
-          style={{ background: '#0f766e', color: 'white' }}
+          className="px-4 py-2 rounded cursor-pointer text-sm font-medium"
+          style={{ backgroundColor: '#0f766e', color: '#ffffff' }}
           onClick={() => Taro.navigateTo({ url: '/pages/web/sales/new' })}
         >
           <Text>+ 新增销售</Text>
         </View>
       </View>
 
-      <View
-        className="rounded-xl p-5 mb-6"
-        style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
-      >
-        <View className="flex gap-3 items-center flex-wrap">
-          <View className="flex-1 min-w-[200px] relative">
-            <View
-              style={{
-                position: 'absolute',
-                left: 12,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                zIndex: 1,
-                pointerEvents: 'none',
-              }}
-            >
-              🔍
-            </View>
-            <Input
-              className="input-field"
-              style={{ paddingLeft: 36 }}
-              placeholder="搜索单号/客户..."
-              value={search}
-              onInput={(e) => setSearch(e.detail.value)}
-              onConfirm={handleSearch}
-            />
-          </View>
-
-          <Picker
-            mode="selector"
-            range={['全部', '草稿', '已确认', '已出库', '已取消']}
-            value={statusIndex}
-            onChange={(e) => setStatusIndex(Number(e.detail.value))}
-          >
-            <View
-              className="flex items-center gap-1 rounded-lg px-4 py-2.5 cursor-pointer"
-              style={{ border: '1px solid #e7e5e4', background: '#fafaf9', minWidth: 110 }}
-            >
-              <Text className="text-sm" style={{ color: '#78716c' }}>
-                {['全部', '草稿', '已确认', '已出库', '已取消'][statusIndex]}
-              </Text>
-              <Text style={{ fontSize: 10, color: '#a8a29e', marginLeft: 4 }}>▼</Text>
+      {/* Filter Bar */}
+      <View className="card p-4 mb-6">
+        <View className="flex gap-2 items-center" style={{ flexDirection: 'row' }}>
+          <Input
+            className="input-field"
+            style={{ flex: 1 }}
+            placeholder="搜索单号/客户..."
+            value={search}
+            onInput={(e) => setSearch(e.detail.value)}
+            onConfirm={() => { setPage(1); loadOrders(); }}
+          />
+          <Picker mode="selector" range={['全部', '草稿', '已确认', '已出库', '已取消']} value={statusIndex} onChange={(e) => setStatusIndex(Number(e.detail.value))}>
+            <View className="px-3 py-2 rounded text-sm cursor-pointer" style={{ border: '1px solid #e7e5e4', minWidth: 80 }}>
+              <Text style={{ color: '#57534e' }}>{['全部', '草稿', '已确认', '已出库', '已取消'][statusIndex]}</Text>
             </View>
           </Picker>
-
           <View
-            className="px-5 py-2.5 rounded-lg cursor-pointer text-sm font-medium"
-            style={{ background: '#0f766e', color: 'white' }}
-            onClick={handleSearch}
+            className="px-4 py-2 rounded cursor-pointer text-sm"
+            style={{ backgroundColor: '#0f766e', color: '#ffffff', whiteSpace: 'nowrap' }}
+            onClick={() => { setPage(1); loadOrders(); }}
           >
             <Text>搜索</Text>
           </View>
         </View>
       </View>
 
-      <View
-        className="rounded-xl overflow-hidden"
-        style={{ background: '#ffffff', border: '1px solid #e7e5e4' }}
-      >
-        <View className="table-header">
-          <Text className="flex-1">单号</Text>
-          <Text className="flex-1">客户</Text>
-          <Text className="flex-1">金额</Text>
-          <Text className="w-24">状态</Text>
-          <Text className="flex-1">创建时间</Text>
-          <Text className="w-32">操作</Text>
+      {/* Table */}
+      <View className="card overflow-hidden">
+        <View className="flex px-5 py-3 text-xs font-medium" style={{ color: '#78716c', borderBottom: '1px solid #e7e5e4' }}>
+          <Text style={{ flex: 1 }}>单号</Text>
+          <Text style={{ flex: 1 }}>客户</Text>
+          <Text style={{ flex: 1 }}>金额</Text>
+          <Text style={{ width: 64 }}>状态</Text>
+          <Text style={{ flex: 1 }}>创建时间</Text>
+          <Text style={{ width: 80, textAlign: 'center' }}>操作</Text>
         </View>
 
-        {loading && (
-          <View className="py-16 flex items-center justify-center">
-            <View className="flex gap-1">
-              {[0, 1, 2].map((i) => (
-                <View key={i} className="loading-dot" style={{ width: 8, height: 8, borderRadius: 9999, background: '#0f766e' }} />
-              ))}
-            </View>
-          </View>
-        )}
-
-        {!loading && orders.length === 0 && (
-          <View className="py-16 text-center">
-            <Text style={{ fontSize: 40, display: 'block' }}>📋</Text>
-            <Text className="text-base font-medium mt-3" style={{ color: '#57534e' }}>暂无销售订单</Text>
-            <Text className="text-sm mt-1" style={{ color: '#a8a29e' }}>点击右上角"新增销售"创建第一单</Text>
-          </View>
-        )}
-
-        {!loading && orders.length > 0 && (
-          <View>
-            {orders.map((o, idx) => {
-              const sc = STATUS_COLORS[o.status] || STATUS_COLORS.DRAFT;
-              return (
-                <View
-                  key={o.id}
-                  className="flex px-5 py-3.5 items-center text-sm"
-                  style={{
-                    background: idx % 2 === 0 ? '#ffffff' : '#fafaf9',
-                    borderBottom: idx < orders.length - 1 ? '1px solid #f5f5f4' : 'none',
-                  }}
-                >
-                  <Text className="flex-1 font-medium" style={{ color: '#292524' }}>
-                    {o.orderNo || '-'}
-                  </Text>
-                  <Text className="flex-1" style={{ color: '#78716c' }}>
-                    {o.customer?.name || o.customerName || '-'}
-                  </Text>
-                  <Text className="flex-1 font-semibold" style={{ color: '#292524' }}>
-                    ¥{Number(o.totalAmount || 0).toFixed(2)}
-                  </Text>
-                  <View
-                    className="w-24 inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-medium"
-                    style={{ background: sc.bg, color: sc.text }}
-                  >
-                    <View style={{ width: 5, height: 5, borderRadius: 9999, background: sc.dot }} />
-                    <Text>{STATUS_LABELS[o.status] || o.status}</Text>
-                  </View>
-                  <Text className="flex-1" style={{ color: '#a8a29e', fontSize: 12 }}>
-                    {o.createdAt ? new Date(o.createdAt).toLocaleDateString('zh-CN') : '-'}
-                  </Text>
-                  <View className="w-32 flex gap-1.5">
-                    {o.status === 'DRAFT' && (
-                      <>
-                        <View className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium" style={{ background: '#f0f9ff', color: '#075985' }} onClick={() => handleAction(o.id, 'confirm')}><Text>确认</Text></View>
-                        <View className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium" style={{ background: '#fef2f2', color: '#991b1b' }} onClick={() => handleAction(o.id, 'cancel')}><Text>取消</Text></View>
-                      </>
-                    )}
-                    {o.status === 'CONFIRMED' && (
-                      <>
-                        <View className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium" style={{ background: '#f0fdf4', color: '#166534' }} onClick={() => handleAction(o.id, 'deliver')}><Text>出库</Text></View>
-                        <View className="px-2.5 py-1 rounded-lg cursor-pointer text-xs font-medium" style={{ background: '#fef2f2', color: '#991b1b' }} onClick={() => handleAction(o.id, 'cancel')}><Text>取消</Text></View>
-                      </>
-                    )}
-                    {(o.status === 'DELIVERED' || o.status === 'CANCELLED') && (
-                      <Text className="text-xs px-2" style={{ color: '#d6d3d1' }}>-</Text>
-                    )}
-                  </View>
+        {loading ? (
+          <View className="py-12 text-center"><Text className="text-sm" style={{ color: '#a8a29e' }}>加载中...</Text></View>
+        ) : orders.length === 0 ? (
+          <View className="py-12 text-center"><Text className="text-sm" style={{ color: '#a8a29e' }}>暂无销售订单</Text></View>
+        ) : (
+          orders.map((o, idx) => {
+            const sc = STATUS_STYLE[o.status] || STATUS_STYLE.DRAFT;
+            return (
+              <View key={o.id} className="flex px-5 py-3 items-center text-sm" style={{ borderBottom: idx < orders.length - 1 ? '1px solid #f5f5f4' : 'none' }}>
+                <Text style={{ flex: 1, fontWeight: 500, color: '#1c1917' }}>{o.orderNo || '-'}</Text>
+                <Text style={{ flex: 1, color: '#78716c' }}>{o.customer?.name || o.customerName || '-'}</Text>
+                <Text style={{ flex: 1, fontWeight: 500, color: '#1c1917' }}>¥{Number(o.totalAmount || 0).toFixed(2)}</Text>
+                <View className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: sc.bg, color: sc.text }}>
+                  <Text>{STATUS_LABELS[o.status] || o.status}</Text>
                 </View>
-              );
-            })}
-          </View>
+                <Text style={{ flex: 1, color: '#a8a29e', fontSize: 12 }}>
+                  {o.createdAt ? new Date(o.createdAt).toLocaleDateString('zh-CN') : '-'}
+                </Text>
+                <View style={{ width: 80, flexDirection: 'row', gap: 4, justifyContent: 'center' }}>
+                  {o.status === 'DRAFT' && (
+                    <>
+                      <View className="px-2 py-1 rounded cursor-pointer text-xs" style={{ backgroundColor: '#f0f9ff', color: '#075985' }} onClick={() => handleAction(o.id, 'confirm')}><Text>确认</Text></View>
+                      <View className="px-2 py-1 rounded cursor-pointer text-xs" style={{ backgroundColor: '#fef2f2', color: '#dc2626' }} onClick={() => handleAction(o.id, 'cancel')}><Text>取消</Text></View>
+                    </>
+                  )}
+                  {o.status === 'CONFIRMED' && (
+                    <>
+                      <View className="px-2 py-1 rounded cursor-pointer text-xs" style={{ backgroundColor: '#f0fdf4', color: '#166534' }} onClick={() => handleAction(o.id, 'deliver')}><Text>出库</Text></View>
+                      <View className="px-2 py-1 rounded cursor-pointer text-xs" style={{ backgroundColor: '#fef2f2', color: '#dc2626' }} onClick={() => handleAction(o.id, 'cancel')}><Text>取消</Text></View>
+                    </>
+                  )}
+                  {(o.status === 'DELIVERED' || o.status === 'CANCELLED') && (
+                    <Text className="text-xs" style={{ color: '#d6d3d1', lineHeight: '28px' }}>-</Text>
+                  )}
+                </View>
+              </View>
+            );
+          })
         )}
       </View>
 
+      {/* Pagination */}
       {totalPages > 1 && (
-        <View className="flex justify-center items-center gap-2 mt-6">
-          <View
-            className="px-4 py-2 rounded-lg cursor-pointer text-sm"
-            style={{
-              border: page <= 1 ? '1px solid #e7e5e4' : '1px solid #d6d3d1',
-              background: page <= 1 ? '#f5f5f4' : '#ffffff',
-              color: page <= 1 ? '#d6d3d1' : '#57534e',
-            }}
-            onClick={() => page > 1 && setPage(page - 1)}
-          >
-            <Text>← 上一页</Text>
+        <View className="flex items-center justify-center gap-3 mt-6">
+          <View className="px-3 py-1.5 rounded cursor-pointer text-sm" style={{ border: '1px solid #e7e5e4', opacity: page <= 1 ? 0.4 : 1 }} onClick={() => page > 1 && setPage(page - 1)}>
+            <Text style={{ color: '#57534e' }}>← 上一页</Text>
           </View>
-          <Text className="text-xs" style={{ color: '#a8a29e' }}>
-            第 {page} / {totalPages || 1} 页 · 共 {total} 条
-          </Text>
-          <View
-            className="px-4 py-2 rounded-lg cursor-pointer text-sm"
-            style={{
-              border: page >= totalPages ? '1px solid #e7e5e4' : '1px solid #d6d3d1',
-              background: page >= totalPages ? '#f5f5f4' : '#ffffff',
-              color: page >= totalPages ? '#d6d3d1' : '#57534e',
-            }}
-            onClick={() => page < totalPages && setPage(page + 1)}
-          >
-            <Text>下一页 →</Text>
+          <Text className="text-sm" style={{ color: '#a8a29e' }}>{page} / {totalPages || 1}</Text>
+          <View className="px-3 py-1.5 rounded cursor-pointer text-sm" style={{ border: '1px solid #e7e5e4', opacity: page >= totalPages ? 0.4 : 1 }} onClick={() => page < totalPages && setPage(page + 1)}>
+            <Text style={{ color: '#57534e' }}>下一页 →</Text>
           </View>
         </View>
       )}

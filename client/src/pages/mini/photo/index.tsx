@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { View, Text, Image, Button } from '@tarojs/components';
+import { View, Text, Image } from '@tarojs/components';
 import Taro from '@tarojs/taro';
 
 export default function PhotoPage() {
@@ -9,20 +9,13 @@ export default function PhotoPage() {
 
   const takePhoto = async () => {
     try {
-      const res = await Taro.chooseMedia({
-        count: 1,
-        mediaType: ['image'],
-        sourceType: ['camera', 'album'],
-      });
-
+      const res = await Taro.chooseMedia({ count: 1, mediaType: ['image'], sourceType: ['camera', 'album'] });
       const tempFile = res.tempFiles[0];
       setPhoto(tempFile.tempFilePath);
       setLoading(true);
-
-      // Simulate OCR processing
       setTimeout(() => {
         setOcrResult({
-          text: 'OCR识别结果: 示例商品',
+          text: '识别结果',
           items: [
             { name: '示例商品A', barcode: '6901234567890' },
             { name: '示例商品B', barcode: '6901234567891' },
@@ -38,73 +31,64 @@ export default function PhotoPage() {
     }
   };
 
-  const handleCreatePurchase = (item: any) => {
-    Taro.navigateTo({
-      url: `/pages/mini/purchase/index?name=${encodeURIComponent(item.name)}&barcode=${item.barcode}`,
-    });
-  };
-
   return (
-    <View className="min-h-screen bg-gray-50">
-      <View className="bg-white px-5 py-4 flex items-center border-b border-gray-100">
-        <Text className="text-lg font-bold text-gray-800">拍照入库</Text>
+    <View className="min-h-screen" style={{ backgroundColor: '#f5f5f4' }}>
+      <View style={{ backgroundColor: '#0f766e', padding: '20px 20px 16px' }}>
+        <Text className="text-lg font-bold" style={{ color: '#ffffff' }} onClick={() => Taro.navigateBack()}>
+          ← 拍照入库
+        </Text>
       </View>
 
-      <View className="p-4 space-y-4">
-        {/* Photo Area */}
-        <View
-          className="bg-white rounded-xl shadow-sm overflow-hidden"
-          onClick={takePhoto}
-        >
+      <View className="p-4" style={{ gap: 12 }}>
+        {/* Photo */}
+        <View className="card overflow-hidden" onClick={takePhoto}>
           {photo ? (
-            <Image src={photo} className="w-full h-64 object-cover" mode="aspectFit" />
+            <Image src={photo} className="w-full" style={{ height: 240 }} mode="aspectFit" />
           ) : (
-            <View className="w-full h-48 flex flex-col items-center justify-center bg-gray-100">
-              <Text className="text-5xl mb-3">📷</Text>
-              <Text className="text-gray-500">点击拍照或从相册选择</Text>
+            <View className="w-full flex items-center justify-center" style={{ height: 180, backgroundColor: '#fafaf9' }}>
+              <Text className="text-sm" style={{ color: '#a8a29e' }}>点击拍照或从相册选择</Text>
             </View>
           )}
         </View>
 
         {loading && (
-          <View className="bg-white rounded-xl p-4 text-center">
-            <Text className="text-gray-500">正在识别图片中的商品...</Text>
+          <View className="card p-4 items-center">
+            <Text className="text-sm" style={{ color: '#78716c' }}>正在识别图片中的商品...</Text>
           </View>
         )}
 
         {/* OCR Results */}
         {ocrResult && (
-          <View className="bg-white rounded-xl shadow-sm p-4">
-            <Text className="font-bold text-gray-800 mb-3">识别结果</Text>
-            <Text className="text-sm text-gray-600 mb-3">{ocrResult.text}</Text>
-
+          <View className="card p-4">
+            <Text className="text-sm font-bold mb-3" style={{ color: '#1c1917' }}>识别结果</Text>
             {ocrResult.items.map((item: any, idx: number) => (
-              <View key={idx} className="border border-gray-200 rounded-lg p-3 mb-3 last:mb-0">
-                <View className="flex items-center justify-between mb-2">
+              <View key={idx} className="p-3 mb-3" style={{ border: '1px solid #e7e5e4', borderRadius: 6 }}>
+                <View className="flex items-center justify-between" style={{ flexDirection: 'row' }}>
                   <View>
-                    <Text className="font-medium text-gray-800">{item.name}</Text>
-                    <Text className="text-xs text-gray-400">{item.barcode}</Text>
+                    <Text className="text-sm font-medium" style={{ color: '#1c1917' }}>{item.name}</Text>
+                    <Text className="text-xs mt-0.5" style={{ color: '#a8a29e' }}>{item.barcode}</Text>
                   </View>
-                  <Button
-                    className="bg-blue-500 text-white text-sm px-4 py-1 rounded-lg"
-                    onClick={() => handleCreatePurchase(item)}
+                  <View
+                    className="px-3 py-1.5 rounded"
+                    style={{ backgroundColor: '#0f766e' }}
+                    onClick={() => Taro.navigateTo({ url: `/pages/mini/purchase/index?name=${encodeURIComponent(item.name)}&barcode=${item.barcode}` })}
                   >
-                    入库
-                  </Button>
+                    <Text className="text-xs text-white">入库</Text>
+                  </View>
                 </View>
               </View>
             ))}
           </View>
         )}
 
-        {/* Take Photo Button */}
         {!loading && (
-          <Button
-            className="bg-indigo-500 text-white rounded-xl py-4 w-full"
+          <View
+            className="w-full py-3 rounded flex items-center justify-center"
+            style={{ backgroundColor: '#0f766e' }}
             onClick={takePhoto}
           >
-            {photo ? '重新拍照' : '拍照识别'}
-          </Button>
+            <Text className="text-white font-medium">{photo ? '重新拍照' : '拍照识别'}</Text>
+          </View>
         )}
       </View>
     </View>
