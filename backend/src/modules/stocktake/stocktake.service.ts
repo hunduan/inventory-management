@@ -75,30 +75,34 @@ export class StocktakeService {
     if (!stocktake) throw new NotFoundException('盘点单不存在');
     if (stocktake.status !== 'IN_PROGRESS') throw new BadRequestException('盘点单状态不正确');
 
-    for (const item of stocktake.items) {
-      const diff = Number(item.actualQuantity) - Number(item.bookQuantity);
-      if (diff === 0) continue;
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of stocktake.items) {
+        const diff = Number(item.actualQuantity) - Number(item.bookQuantity);
+        if (diff === 0) continue;
 
-      const inv = await this.prisma.inventory.findFirst({
-        where: { tenantId, productId: item.productId, warehouseId: stocktake.warehouseId },
-      });
-      if (inv) {
-        const oldQty = Number(inv.quantity);
-        await this.prisma.inventory.update({
-          where: { id: inv.id },
-          data: { quantity: oldQty + diff },
+        const inv = await tx.inventory.findFirst({
+          where: { tenantId, productId: item.productId, warehouseId: stocktake.warehouseId },
         });
-        await this.prisma.inventoryLog.create({
-          data: {
-            tenantId, productId: item.productId, warehouseId: stocktake.warehouseId,
-            type: 'STOCKTAKE', quantity: diff, beforeQty: oldQty, afterQty: oldQty + diff,
-            refId: stocktake.id, refType: 'STOCKTAKE',
-          },
-        });
+        if (inv) {
+          const oldQty = Number(inv.quantity);
+          const newQty = oldQty + diff;
+          await tx.inventory.update({
+            where: { id: inv.id },
+            data: { quantity: newQty },
+          });
+          await tx.inventoryLog.create({
+            data: {
+              tenantId, productId: item.productId, warehouseId: stocktake.warehouseId,
+              type: 'STOCKTAKE', quantity: diff, beforeQty: oldQty, afterQty: newQty,
+              refId: stocktake.id, refType: 'STOCKTAKE',
+            },
+          });
+        }
       }
-    }
 
-    await this.prisma.stocktake.updateMany({ where: { id, tenantId }, data: { status: 'COMPLETED' } });
+      await tx.stocktake.updateMany({ where: { id, tenantId }, data: { status: 'COMPLETED' } });
+    });
+
     return this.findById(tenantId, id);
   }
 

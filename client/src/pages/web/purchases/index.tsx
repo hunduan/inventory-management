@@ -3,8 +3,9 @@ import { View, Text, Input, Picker } from '@tarojs/components';
 import AppShell from '../../../components/layout/app-shell';
 import { purchasesApi } from '../../../services/purchases';
 import Taro from '@tarojs/taro';
+import Pagination from '../../../components/ui/Pagination';
 
-const STATUS_OPTIONS = ['全部', 'DRAFT', 'CONFIRMED', 'RECEIVED', 'CANCELLED'];
+const STATUS_OPTIONS = ['全部', 'DRAFT', 'RECEIVED', 'CANCELLED'];
 const STATUS_LABELS: Record<string, string> = {
   DRAFT: '草稿', CONFIRMED: '已确认', RECEIVED: '已入库', CANCELLED: '已取消',
 };
@@ -22,6 +23,7 @@ export default function PurchasesPage() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(false);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   const loadOrders = async () => {
     setLoading(true);
@@ -32,81 +34,61 @@ export default function PurchasesPage() {
       const res = await purchasesApi.list(params.toString());
       setOrders(res.items || []);
       setTotal(res.total || 0);
-    } catch (err: any) {
-      Taro.showToast({ title: err.message || '加载失败', icon: 'none' });
-    } finally {
-      setLoading(false);
-    }
+    } catch (err: any) { /* toast */ } finally { setLoading(false); }
   };
 
   useEffect(() => { loadOrders(); }, [page, statusIndex]);
 
-  const handleAction = async (id: string, action: 'confirm' | 'receive' | 'cancel') => {
-    const labels: Record<string, string> = { confirm: '确认', receive: '入库', cancel: '取消' };
+  const handleAction = async (id: string, action: 'receive' | 'cancel') => {
     try {
-      if (action === 'confirm') await purchasesApi.confirm(id);
-      else if (action === 'receive') await purchasesApi.receive(id);
+      if (action === 'receive') await purchasesApi.receive(id);
       else await purchasesApi.cancel(id);
-      Taro.showToast({ title: `${labels[action]}成功`, icon: 'success' });
+      Taro.showToast({ title: action === 'receive' ? '入库成功' : '已取消', icon: 'success' });
       loadOrders();
-    } catch (err: any) {
-      Taro.showToast({ title: err.message || `${labels[action]}失败`, icon: 'none' });
-    }
+    } catch (err: any) { Taro.showToast({ title: err.message || '操作失败', icon: 'none' }); }
   };
-
-  const totalPages = Math.ceil(total / 20);
 
   return (
     <AppShell>
       <View className="flex items-center justify-between mb-6">
         <View>
           <Text className="text-xl font-bold" style={{ color: '#1c1917' }}>采购管理</Text>
-          <Text className="text-sm mt-0.5" style={{ color: '#a8a29e' }}>共 {total} 条采购订单</Text>
+          <Text className="text-sm mt-0.5" style={{ color: '#a8a29e' }}>共 {total} 条</Text>
         </View>
-        <View
-          className="px-4 py-2 rounded cursor-pointer text-sm font-medium"
+        <View className="px-4 py-2 rounded cursor-pointer text-sm font-medium"
           style={{ backgroundColor: '#0f766e', color: '#ffffff' }}
-          onClick={() => Taro.navigateTo({ url: '/pages/web/purchases/new' })}
-        >
+          onClick={() => Taro.navigateTo({ url: '/pages/web/purchases/new' })}>
           <Text>+ 新增采购</Text>
         </View>
       </View>
 
-      {/* Filter Bar */}
       <View className="card p-4 mb-6">
         <View className="flex gap-2 items-center" style={{ flexDirection: 'row' }}>
-          <Input
-            className="input-field"
-            style={{ flex: 1 }}
-            placeholder="搜索单号/供应商..."
-            value={search}
-            onInput={(e) => setSearch(e.detail.value)}
-            onConfirm={() => { setPage(1); loadOrders(); }}
-          />
-          <Picker mode="selector" range={['全部', '草稿', '已确认', '已入库', '已取消']} value={statusIndex} onChange={(e) => setStatusIndex(Number(e.detail.value))}>
+          <Input className="input-field" style={{ flex: 1 }} placeholder="搜索单号/供应商..." value={search}
+            onInput={(e) => setSearch(e.detail.value)} onConfirm={() => { setPage(1); loadOrders(); }} />
+          <Picker mode="selector" range={['全部', '草稿', '已入库', '已取消']} value={statusIndex}
+            onChange={(e) => setStatusIndex(Number(e.detail.value))}>
             <View className="px-3 py-2 rounded text-sm cursor-pointer" style={{ border: '1px solid #e7e5e4', minWidth: 80 }}>
-              <Text style={{ color: '#57534e' }}>{['全部', '草稿', '已确认', '已入库', '已取消'][statusIndex]}</Text>
+              <Text style={{ color: '#57534e' }}>{['全部', '草稿', '已入库', '已取消'][statusIndex]}</Text>
             </View>
           </Picker>
-          <View
-            className="px-4 py-2 rounded cursor-pointer text-sm"
-            style={{ backgroundColor: '#0f766e', color: '#ffffff', whiteSpace: 'nowrap' }}
-            onClick={() => { setPage(1); loadOrders(); }}
-          >
+          <View className="px-4 py-2 rounded cursor-pointer text-sm"
+            style={{ backgroundColor: '#0f766e', color: '#ffffff' }}
+            onClick={() => { setPage(1); loadOrders(); }}>
             <Text>搜索</Text>
           </View>
         </View>
       </View>
 
-      {/* Table */}
-      <View className="card overflow-hidden">
-        <View className="flex px-5 py-3 text-xs font-medium" style={{ color: '#78716c', borderBottom: '1px solid #e7e5e4' }}>
-          <Text style={{ flex: 1 }}>单号</Text>
-          <Text style={{ flex: 1 }}>供应商</Text>
-          <Text style={{ flex: 1 }}>金额</Text>
-          <Text style={{ width: 64 }}>状态</Text>
-          <Text style={{ flex: 1 }}>创建时间</Text>
-          <Text style={{ width: 80, textAlign: 'center' }}>操作</Text>
+      <View className="card" style={{ overflow: 'hidden' }}>
+        <View className="data-table-row text-xs" style={{ color: '#78716c', borderBottom: '1px solid #e7e5e4', backgroundColor: '#fafaf9', padding: '10px 16px', fontWeight: 500 }}>
+          <Text className="data-col-no">单号</Text>
+          <Text className="data-col-partner">供应商</Text>
+          <Text className="data-col-wh">仓库</Text>
+          <Text className="data-col-amount">金额</Text>
+          <Text className="data-col-status">状态</Text>
+          <Text className="data-col-time">时间</Text>
+          <Text className="data-col-actions">操作</Text>
         </View>
 
         {loading ? (
@@ -116,51 +98,63 @@ export default function PurchasesPage() {
         ) : (
           orders.map((o, idx) => {
             const sc = STATUS_STYLE[o.status] || STATUS_STYLE.DRAFT;
+            const isExpanded = expandedId === o.id;
+            const items = o.items || [];
             return (
-              <View key={o.id} className="flex px-5 py-3 items-center text-sm" style={{ borderBottom: idx < orders.length - 1 ? '1px solid #f5f5f4' : 'none' }}>
-                <Text style={{ flex: 1, fontWeight: 500, color: '#1c1917' }}>{o.orderNo || '-'}</Text>
-                <Text style={{ flex: 1, color: '#78716c' }}>{o.supplier?.name || o.supplierName || '-'}</Text>
-                <Text style={{ flex: 1, fontWeight: 500, color: '#1c1917' }}>¥{Number(o.totalAmount || 0).toFixed(2)}</Text>
-                <View className="px-2 py-0.5 rounded text-xs font-medium" style={{ backgroundColor: sc.bg, color: sc.text }}>
-                  <Text>{STATUS_LABELS[o.status] || o.status}</Text>
+              <View key={o.id}>
+                <View className="data-table-row text-sm" style={{
+                  padding: '10px 16px',
+                  borderBottom: isExpanded ? 'none' : (idx < orders.length - 1 ? '1px solid #f5f5f4' : 'none'),
+                  cursor: 'pointer',
+                  backgroundColor: isExpanded ? '#fafaf9' : 'transparent',
+                }} onClick={() => setExpandedId(isExpanded ? null : o.id)}>
+                  <Text className="data-col-no" style={{ fontWeight: 500, color: '#1c1917' }}>{o.orderNo || '-'}</Text>
+                  <Text className="data-col-partner" style={{ color: '#78716c' }}>{o.supplier?.name || o.supplierName || '-'}</Text>
+                  <Text className="data-col-wh" style={{ color: '#78716c' }}>{o.warehouse?.name || o.warehouseName || '-'}</Text>
+                  <Text className="data-col-amount" style={{ fontWeight: 500, color: '#1c1917' }}>¥{Number(o.totalAmount || 0).toFixed(2)}</Text>
+                  <View className="data-col-status">
+                    <View style={{ backgroundColor: sc.bg, color: sc.text, padding: '2px 6px', borderRadius: 4, display: 'inline-flex' }}>
+                      <Text className="text-xs" style={{ fontWeight: 500 }}>{STATUS_LABELS[o.status] || o.status}</Text>
+                    </View>
+                  </View>
+                  <Text className="data-col-time" style={{ color: '#a8a29e', fontSize: 12 }}>{o.createdAt ? new Date(o.createdAt).toLocaleDateString('zh-CN') : '-'}</Text>
+                  <View className="data-col-actions" style={{ flexDirection: 'row', gap: 4, justifyContent: 'center' }}
+                    onClick={(e: any) => e.stopPropagation()}>
+                    {o.status === 'DRAFT' ? (
+                      <>
+                        <View style={{ padding: '4px 8px', borderRadius: 4, backgroundColor: '#f0fdf4', color: '#166534' }} onClick={() => handleAction(o.id, 'receive')}>
+                          <Text className="text-xs">入库</Text></View>
+                        <View style={{ padding: '4px 8px', borderRadius: 4, backgroundColor: '#fef2f2', color: '#dc2626' }} onClick={() => handleAction(o.id, 'cancel')}>
+                          <Text className="text-xs">取消</Text></View>
+                      </>
+                    ) : <Text className="text-xs" style={{ color: '#d6d3d1', lineHeight: '28px' }}>-</Text>}
+                  </View>
                 </View>
-                <Text style={{ flex: 1, color: '#a8a29e', fontSize: 12 }}>
-                  {o.createdAt ? new Date(o.createdAt).toLocaleDateString('zh-CN') : '-'}
-                </Text>
-                <View style={{ width: 80, flexDirection: 'row', gap: 4, justifyContent: 'center' }}>
-                  {o.status === 'DRAFT' && (
-                    <>
-                      <View className="px-2 py-1 rounded cursor-pointer text-xs" style={{ backgroundColor: '#f0f9ff', color: '#075985' }} onClick={() => handleAction(o.id, 'confirm')}><Text>确认</Text></View>
-                      <View className="px-2 py-1 rounded cursor-pointer text-xs" style={{ backgroundColor: '#fef2f2', color: '#dc2626' }} onClick={() => handleAction(o.id, 'cancel')}><Text>取消</Text></View>
-                    </>
-                  )}
-                  {o.status === 'CONFIRMED' && (
-                    <>
-                      <View className="px-2 py-1 rounded cursor-pointer text-xs" style={{ backgroundColor: '#f0fdf4', color: '#166534' }} onClick={() => handleAction(o.id, 'receive')}><Text>入库</Text></View>
-                      <View className="px-2 py-1 rounded cursor-pointer text-xs" style={{ backgroundColor: '#fef2f2', color: '#dc2626' }} onClick={() => handleAction(o.id, 'cancel')}><Text>取消</Text></View>
-                    </>
-                  )}
-                  {(o.status === 'RECEIVED' || o.status === 'CANCELLED') && (
-                    <Text className="text-xs" style={{ color: '#d6d3d1', lineHeight: '28px' }}>-</Text>
-                  )}
-                </View>
+
+                {isExpanded && items.length > 0 && (
+                  <View style={{ backgroundColor: '#fafaf9', padding: '0 16px 12px 16px', borderBottom: idx < orders.length - 1 ? '1px solid #f5f5f4' : 'none' }}>
+                    <View style={{ borderTop: '1px solid #e7e5e4', paddingTop: 8 }}>
+                      {items.map((item: any, i: number) => (
+                        <View key={i} style={{ display: 'flex', flexDirection: 'row', padding: '6px 0', borderBottom: i < items.length - 1 ? '1px solid #f0f0f0' : 'none' }}>
+                          <Text style={{ flex: 3, color: '#1c1917', fontSize: 13 }}>{item.product?.name || item.productName || '-'}</Text>
+                          <Text style={{ flex: 2, color: '#78716c', fontSize: 13, textAlign: 'center' }}>{item.quantity} x {Number(item.unitCost || 0).toFixed(2)}</Text>
+                          <Text style={{ flex: 2, color: '#1c1917', fontSize: 13, fontWeight: 500, textAlign: 'right' }}>{((item.quantity || 0) * Number(item.unitCost || 0)).toFixed(2)}</Text>
+                        </View>
+                      ))}
+                      <View style={{ display: 'flex', flexDirection: 'row', padding: '8px 0 4px 0' }}>
+                        <Text style={{ flex: 1, color: '#78716c', fontSize: 12 }}>{items.length} 项</Text>
+                        <Text className="text-sm" style={{ fontWeight: 700, color: '#0f766e' }}>合计 {Number(o.totalAmount || 0).toFixed(2)}</Text>
+                      </View>
+                    </View>
+                  </View>
+                )}
               </View>
             );
           })
         )}
       </View>
 
-      {totalPages > 1 && (
-        <View className="flex items-center justify-center gap-3 mt-6">
-          <View className="px-3 py-1.5 rounded cursor-pointer text-sm" style={{ border: '1px solid #e7e5e4', opacity: page <= 1 ? 0.4 : 1 }} onClick={() => page > 1 && setPage(page - 1)}>
-            <Text style={{ color: '#57534e' }}>← 上一页</Text>
-          </View>
-          <Text className="text-sm" style={{ color: '#a8a29e' }}>{page} / {totalPages || 1}</Text>
-          <View className="px-3 py-1.5 rounded cursor-pointer text-sm" style={{ border: '1px solid #e7e5e4', opacity: page >= totalPages ? 0.4 : 1 }} onClick={() => page < totalPages && setPage(page + 1)}>
-            <Text style={{ color: '#57534e' }}>下一页 →</Text>
-          </View>
-        </View>
-      )}
+      <Pagination page={page} totalPages={Math.ceil(total / 20)} total={total} onPrev={() => setPage(page - 1)} onNext={() => setPage(page + 1)} />
     </AppShell>
   );
 }

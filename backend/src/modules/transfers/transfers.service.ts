@@ -60,41 +60,48 @@ export class TransfersService {
     if (!transfer) throw new NotFoundException('调拨单不存在');
     if (transfer.status !== 'CONFIRMED') throw new BadRequestException('调拨单未确认');
 
-    for (const item of transfer.items) {
-      // Deduct from source
-      const fromInv = await this.prisma.inventory.findFirst({
-        where: { tenantId, productId: item.productId, warehouseId: transfer.fromWarehouseId },
-      });
-      if (fromInv) {
-        const oldQty = Number(fromInv.quantity);
-        await this.prisma.inventory.update({ where: { id: fromInv.id }, data: { quantity: oldQty - Number(item.quantity) } });
-        await this.prisma.inventoryLog.create({
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of transfer.items) {
+        // Deduct from source
+        const fromInv = await tx.inventory.findFirst({
+          where: { tenantId, productId: item.productId, warehouseId: transfer.fromWarehouseId },
+        });
+        if (!fromInv || Number(fromInv.quantity) < Number(item.quantity)) {
+          throw new BadRequestException(`源仓库库存不足，无法调拨`);
+        }
+
+        const fromOldQty = Number(fromInv.quantity);
+        const fromNewQty = fromOldQty - Number(item.quantity);
+        await tx.inventory.update({ where: { id: fromInv.id }, data: { quantity: fromNewQty } });
+        await tx.inventoryLog.create({
           data: { tenantId, productId: item.productId, warehouseId: transfer.fromWarehouseId,
-            type: 'TRANSFER_OUT', quantity: -Number(item.quantity), beforeQty: oldQty, afterQty: oldQty - Number(item.quantity),
+            type: 'TRANSFER_OUT', quantity: -Number(item.quantity), beforeQty: fromOldQty, afterQty: fromNewQty,
             refId: transfer.id, refType: 'TRANSFER' },
         });
+
+        // Add to target
+        const toInv = await tx.inventory.findFirst({
+          where: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId },
+        });
+        if (toInv) {
+          const toOldQty = Number(toInv.quantity);
+          const toNewQty = toOldQty + Number(item.quantity);
+          await tx.inventory.update({ where: { id: toInv.id }, data: { quantity: toNewQty } });
+          await tx.inventoryLog.create({
+            data: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId,
+              type: 'TRANSFER_IN', quantity: item.quantity, beforeQty: toOldQty, afterQty: toNewQty,
+              refId: transfer.id, refType: 'TRANSFER' },
+          });
+        } else {
+          await tx.inventory.create({
+            data: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId, quantity: item.quantity, unitCost: 0 },
+          });
+        }
       }
 
-      // Add to target
-      const toInv = await this.prisma.inventory.findFirst({
-        where: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId },
-      });
-      if (toInv) {
-        const oldQty = Number(toInv.quantity);
-        await this.prisma.inventory.update({ where: { id: toInv.id }, data: { quantity: oldQty + Number(item.quantity) } });
-        await this.prisma.inventoryLog.create({
-          data: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId,
-            type: 'TRANSFER_IN', quantity: item.quantity, beforeQty: oldQty, afterQty: oldQty + Number(item.quantity),
-            refId: transfer.id, refType: 'TRANSFER' },
-        });
-      } else {
-        await this.prisma.inventory.create({
-          data: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId, quantity: item.quantity, unitCost: 0 },
-        });
-      }
-    }
+      await tx.transfer.updateMany({ where: { id, tenantId }, data: { status: 'COMPLETED' } });
+    });
 
-    await this.prisma.transfer.updateMany({ where: { id, tenantId }, data: { status: 'COMPLETED' } });
     return this.findById(tenantId, id);
   }
 

@@ -46,7 +46,7 @@
     "swc": false,
     "disableSWC": true
   },
-  "miniprogramRoot": "./",
+  "miniprogramRoot": "./dist/weapp",
   "compileType": "miniprogram",
   "libVersion": "3.7.12",
   "appid": "wx9c8ea2fef7f504a6",

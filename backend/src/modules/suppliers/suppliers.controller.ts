@@ -3,6 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { SuppliersService } from './suppliers.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TenantId } from '../../common/decorators/tenant.decorator';
+import { CreateSupplierDto } from './dto/create-supplier.dto';
+import { UpdateSupplierDto } from './dto/update-supplier.dto';
 
 @ApiTags('供应商')
 @ApiBearerAuth()
@@ -25,14 +27,14 @@ export class SuppliersController {
 
   @Post()
   @ApiOperation({ summary: '创建供应商' })
-  async create(@TenantId() tenantId: string, @Body() data: { name: string; phone?: string; email?: string; address?: string; contact?: string; remark?: string }) {
-    return this.suppliersService.create(tenantId, data);
+  async create(@TenantId() tenantId: string, @Body() dto: CreateSupplierDto) {
+    return this.suppliersService.create(tenantId, dto);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: '更新供应商' })
-  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() data: any) {
-    return this.suppliersService.update(tenantId, id, data);
+  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() dto: UpdateSupplierDto) {
+    return this.suppliersService.update(tenantId, id, dto);
   }
 
   @Delete(':id')

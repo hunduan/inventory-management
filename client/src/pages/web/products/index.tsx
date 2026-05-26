@@ -4,6 +4,7 @@ import AppShell from '../../../components/layout/app-shell';
 import { productsApi } from '../../../services/products';
 import Taro from '@tarojs/taro';
 import EmptyState from '../../../components/ui/EmptyState';
+import Pagination from '../../../components/ui/Pagination';
 
 export default function ProductsPage() {
   const [products, setProducts] = useState<any[]>([]);
@@ -28,8 +29,6 @@ export default function ProductsPage() {
   };
 
   useEffect(() => { loadProducts(); }, [page]);
-
-  const totalPages = Math.ceil(total / 20);
 
   return (
     <AppShell>
@@ -99,7 +98,7 @@ export default function ProductsPage() {
                 <View
                   className="px-2.5 py-1 rounded cursor-pointer text-xs"
                   style={{ backgroundColor: '#f0fdfa', color: '#0f766e' }}
-                  onClick={() => Taro.navigateTo({ url: `/pages/web/products/edit?id=${p.id}` })}
+                  onClick={() => Taro.navigateTo({ url: `/pages/web/products/new?id=${p.id}` })}
                 >
                   <Text>编辑</Text>
                 </View>
@@ -109,32 +108,7 @@ export default function ProductsPage() {
         )}
       </View>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <View className="flex items-center justify-center gap-3 mt-6">
-          <View
-            className="px-3 py-1.5 rounded cursor-pointer text-sm"
-            style={{
-              border: '1px solid #e7e5e4',
-              opacity: page <= 1 ? 0.4 : 1,
-            }}
-            onClick={() => page > 1 && setPage(page - 1)}
-          >
-            <Text style={{ color: '#57534e' }}>← 上一页</Text>
-          </View>
-          <Text className="text-sm" style={{ color: '#a8a29e' }}>{page} / {totalPages}</Text>
-          <View
-            className="px-3 py-1.5 rounded cursor-pointer text-sm"
-            style={{
-              border: '1px solid #e7e5e4',
-              opacity: page >= totalPages ? 0.4 : 1,
-            }}
-            onClick={() => page < totalPages && setPage(page + 1)}
-          >
-            <Text style={{ color: '#57534e' }}>下一页 →</Text>
-          </View>
-        </View>
-      )}
+      <Pagination page={page} totalPages={Math.ceil(total / 20)} total={total} onPrev={() => setPage(page - 1)} onNext={() => setPage(page + 1)} />
     </AppShell>
   );
 }

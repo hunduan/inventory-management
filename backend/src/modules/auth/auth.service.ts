@@ -43,25 +43,27 @@ export class AuthService {
 
     const passwordHash = bcrypt.hashSync(dto.password, 10);
 
-    const tenant = await this.prisma.tenant.create({ data: { name: dto.tenantName, slug: dto.tenantSlug } });
+    return this.prisma.$transaction(async (tx) => {
+      const tenant = await tx.tenant.create({ data: { name: dto.tenantName, slug: dto.tenantSlug } });
 
-    const adminRole = await this.prisma.role.create({
-      data: {
-        tenantId: tenant.id,
-        name: 'admin',
-        permissions: JSON.stringify(['purchase.*', 'sale.*', 'inventory.*', 'product.*', 'report.*', 'setting.*']),
-      },
+      const adminRole = await tx.role.create({
+        data: {
+          tenantId: tenant.id,
+          name: 'admin',
+          permissions: ['purchase.*', 'sale.*', 'inventory.*', 'product.*', 'report.*', 'setting.*'],
+        },
+      });
+
+      const user = await tx.user.create({
+        data: { tenantId: tenant.id, email: dto.email, passwordHash, name: dto.name, roleId: adminRole.id },
+      });
+
+      const payload = { sub: user.id, email: user.email, tenantId: user.tenantId, role: 'admin' };
+
+      return {
+        accessToken: this.jwtService.sign(payload),
+        user: { id: user.id, name: user.name, email: user.email, tenantId: tenant.id, tenantName: tenant.name, role: 'admin' },
+      };
     });
-
-    const user = await this.prisma.user.create({
-      data: { tenantId: tenant.id, email: dto.email, passwordHash, name: dto.name, roleId: adminRole.id },
-    });
-
-    const payload = { sub: user.id, email: user.email, tenantId: user.tenantId, role: 'admin' };
-
-    return {
-      accessToken: this.jwtService.sign(payload),
-      user: { id: user.id, name: user.name, email: user.email, tenantId: tenant.id, tenantName: tenant.name, role: 'admin' },
-    };
   }
 }

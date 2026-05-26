@@ -3,6 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { WarehousesService } from './warehouses.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TenantId } from '../../common/decorators/tenant.decorator';
+import { CreateWarehouseDto } from './dto/create-warehouse.dto';
+import { UpdateWarehouseDto } from './dto/update-warehouse.dto';
 
 @ApiTags('仓库')
 @ApiBearerAuth()
@@ -25,14 +27,14 @@ export class WarehousesController {
 
   @Post()
   @ApiOperation({ summary: '创建仓库' })
-  async create(@TenantId() tenantId: string, @Body() data: { name: string; phone?: string; email?: string; address?: string; contact?: string; remark?: string }) {
-    return this.warehousesService.create(tenantId, data);
+  async create(@TenantId() tenantId: string, @Body() dto: CreateWarehouseDto) {
+    return this.warehousesService.create(tenantId, dto);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: '更新仓库' })
-  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() data: any) {
-    return this.warehousesService.update(tenantId, id, data);
+  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() dto: UpdateWarehouseDto) {
+    return this.warehousesService.update(tenantId, id, dto);
   }
 
   @Delete(':id')

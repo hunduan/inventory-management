@@ -87,35 +87,37 @@ export class SalesService {
     if (order.status !== 'CONFIRMED') throw new BadRequestException('销售单未确认，无法发货');
     if (!order.warehouseId) throw new BadRequestException('销售单未指定仓库');
 
-    // Deduct inventory for each item
-    for (const item of order.items) {
-      const inv = await this.prisma.inventory.findFirst({
-        where: { tenantId, productId: item.productId, warehouseId: order.warehouseId! },
-      });
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        const inv = await tx.inventory.findFirst({
+          where: { tenantId, productId: item.productId, warehouseId: order.warehouseId! },
+        });
 
-      if (!inv || Number(inv.quantity) < Number(item.quantity)) {
-        throw new BadRequestException(`商品 ${item.product.name} 库存不足`);
+        if (!inv || Number(inv.quantity) < Number(item.quantity)) {
+          throw new BadRequestException(`商品 ${item.product.name} 库存不足`);
+        }
+
+        const newQty = Number(inv.quantity) - Number(item.quantity);
+        await tx.inventory.update({
+          where: { id: inv.id },
+          data: { quantity: newQty },
+        });
+        await tx.inventoryLog.create({
+          data: {
+            tenantId, productId: item.productId, warehouseId: order.warehouseId,
+            type: 'SALE_OUT', quantity: item.quantity,
+            beforeQty: Number(inv.quantity), afterQty: newQty,
+            refId: order.id, refType: 'SALE_ORDER',
+          },
+        });
       }
 
-      const newQty = Number(inv.quantity) - Number(item.quantity);
-      await this.prisma.inventory.update({
-        where: { id: inv.id },
-        data: { quantity: newQty },
+      await tx.saleOrder.updateMany({
+        where: { id, tenantId },
+        data: { status: 'DELIVERED' },
       });
-      await this.prisma.inventoryLog.create({
-        data: {
-          tenantId, productId: item.productId, warehouseId: order.warehouseId,
-          type: 'SALE_OUT', quantity: item.quantity,
-          beforeQty: Number(inv.quantity), afterQty: newQty,
-          refId: order.id, refType: 'SALE_ORDER',
-        },
-      });
-    }
-
-    await this.prisma.saleOrder.updateMany({
-      where: { id, tenantId },
-      data: { status: 'DELIVERED' },
     });
+
     return this.findById(tenantId, id);
   }
 

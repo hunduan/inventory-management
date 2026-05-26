@@ -51,7 +51,7 @@ export default function LoginPage() {
         {/* Card */}
         <View className="card p-6">
           <View style={{ marginBottom: 16 }}>
-            <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>邮箱</Text>
+            <Text style={{ fontSize: 15, fontWeight: 500, color: '#57534e', marginBottom: 6 }}>邮箱</Text>
             <Input
               className="input-field"
               placeholder="请输入邮箱"
@@ -61,7 +61,7 @@ export default function LoginPage() {
           </View>
 
           <View style={{ marginBottom: 24 }}>
-            <Text className="text-sm font-medium mb-1.5" style={{ color: '#57534e' }}>密码</Text>
+            <Text style={{ fontSize: 15, fontWeight: 500, color: '#57534e', marginBottom: 6 }}>密码</Text>
             <Input
               className="input-field"
               placeholder="请输入密码"
@@ -80,13 +80,12 @@ export default function LoginPage() {
             }}
             onClick={loading ? undefined : handleLogin}
           >
-            <Text className="text-white font-medium">{loading ? '登录中...' : '登录'}</Text>
+            <Text style={{ color: '#fff', fontSize: 16, fontWeight: 500 }}>{loading ? '登录中...' : '登录'}</Text>
           </View>
 
           <View className="mt-5 text-center">
             <Text
-              className="text-sm cursor-pointer"
-              style={{ color: '#0f766e' }}
+              style={{ fontSize: 15, color: '#0f766e' }}
               onClick={() => Taro.navigateTo({ url: '/pages/web/register/index' })}
             >
               还没有账号？立即注册

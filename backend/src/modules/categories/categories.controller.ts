@@ -3,6 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CategoriesService } from './categories.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TenantId } from '../../common/decorators/tenant.decorator';
+import { CreateCategoryDto } from './dto/create-category.dto';
+import { UpdateCategoryDto } from './dto/update-category.dto';
 
 @ApiTags('分类')
 @ApiBearerAuth()
@@ -19,14 +21,14 @@ export class CategoriesController {
 
   @Post()
   @ApiOperation({ summary: '创建分类' })
-  async create(@TenantId() tenantId: string, @Body() data: { name: string; parentId?: string; sortOrder?: number }) {
-    return this.categoriesService.create(tenantId, data);
+  async create(@TenantId() tenantId: string, @Body() dto: CreateCategoryDto) {
+    return this.categoriesService.create(tenantId, dto);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: '更新分类' })
-  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() data: any) {
-    return this.categoriesService.update(tenantId, id, data);
+  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() dto: UpdateCategoryDto) {
+    return this.categoriesService.update(tenantId, id, dto);
   }
 
   @Delete(':id')

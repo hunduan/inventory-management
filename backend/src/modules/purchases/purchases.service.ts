@@ -76,47 +76,50 @@ export class PurchasesService {
       include: { items: { include: { product: true } }, warehouse: true },
     });
     if (!order) throw new NotFoundException('采购单不存在');
-    if (order.status !== 'CONFIRMED') throw new BadRequestException('采购单未确认，无法入库');
+    if (order.status === 'RECEIVED') throw new BadRequestException('采购单已入库');
+    if (order.status === 'CANCELLED') throw new BadRequestException('采购单已取消');
     if (!order.warehouseId) throw new BadRequestException('采购单未指定仓库');
 
-    // Update inventory for each item
-    for (const item of order.items) {
-      const inv = await this.prisma.inventory.findFirst({
-        where: { tenantId, productId: item.productId, warehouseId: order.warehouseId! },
-      });
+    await this.prisma.$transaction(async (tx) => {
+      for (const item of order.items) {
+        const inv = await tx.inventory.findFirst({
+          where: { tenantId, productId: item.productId, warehouseId: order.warehouseId! },
+        });
 
-      if (inv) {
-        const newQty = Number(inv.quantity) + Number(item.quantity);
-        await this.prisma.inventory.update({
-          where: { id: inv.id },
-          data: { quantity: newQty },
-        });
-        await this.prisma.inventoryLog.create({
-          data: {
-            tenantId, productId: item.productId, warehouseId: order.warehouseId,
-            type: 'PURCHASE_IN', quantity: item.quantity,
-            beforeQty: Number(inv.quantity), afterQty: newQty,
-            refId: order.id, refType: 'PURCHASE_ORDER',
-          },
-        });
-      } else {
-        await this.prisma.inventory.create({
-          data: { tenantId, productId: item.productId, warehouseId: order.warehouseId!, quantity: item.quantity, unitCost: item.unitCost },
-        });
-        await this.prisma.inventoryLog.create({
-          data: {
-            tenantId, productId: item.productId, warehouseId: order.warehouseId,
-            type: 'PURCHASE_IN', quantity: item.quantity, beforeQty: 0, afterQty: Number(item.quantity),
-            refId: order.id, refType: 'PURCHASE_ORDER',
-          },
-        });
+        if (inv) {
+          const newQty = Number(inv.quantity) + Number(item.quantity);
+          await tx.inventory.update({
+            where: { id: inv.id },
+            data: { quantity: newQty },
+          });
+          await tx.inventoryLog.create({
+            data: {
+              tenantId, productId: item.productId, warehouseId: order.warehouseId,
+              type: 'PURCHASE_IN', quantity: item.quantity,
+              beforeQty: Number(inv.quantity), afterQty: newQty,
+              refId: order.id, refType: 'PURCHASE_ORDER',
+            },
+          });
+        } else {
+          await tx.inventory.create({
+            data: { tenantId, productId: item.productId, warehouseId: order.warehouseId!, quantity: item.quantity, unitCost: item.unitCost },
+          });
+          await tx.inventoryLog.create({
+            data: {
+              tenantId, productId: item.productId, warehouseId: order.warehouseId,
+              type: 'PURCHASE_IN', quantity: item.quantity, beforeQty: 0, afterQty: Number(item.quantity),
+              refId: order.id, refType: 'PURCHASE_ORDER',
+            },
+          });
+        }
       }
-    }
 
-    await this.prisma.purchaseOrder.updateMany({
-      where: { id, tenantId },
-      data: { status: 'RECEIVED' },
+      await tx.purchaseOrder.updateMany({
+        where: { id, tenantId },
+        data: { status: 'RECEIVED' },
+      });
     });
+
     return this.findById(tenantId, id);
   }
 

@@ -4,6 +4,7 @@ import AppShell from '../../../components/layout/app-shell';
 import { inventoryApi } from '../../../services/inventory';
 import { warehousesApi } from '../../../services/warehouses';
 import Taro from '@tarojs/taro';
+import Pagination from '../../../components/ui/Pagination';
 
 interface StockBadge {
   label: string;
@@ -72,8 +73,6 @@ export default function InventoryPage() {
   const handleSearch = () => { setPage(1); loadRecords(); };
 
   const warehouseNames = ['全部仓库', ...warehouses.map((w: any) => w.name)];
-  const totalPages = Math.ceil(total / 20);
-
   return (
     <AppShell>
       {/* Page Header */}
@@ -313,85 +312,7 @@ export default function InventoryPage() {
         )}
       </View>
 
-      {/* Pagination */}
-      {totalPages > 1 && (
-        <View
-          style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            gap: 8,
-            marginTop: 24,
-          }}
-        >
-          <View
-            style={{
-              padding: '8px 16px',
-              borderRadius: 4,
-              cursor: 'pointer',
-              fontSize: 14,
-              border: page <= 1 ? '1px solid #e7e5e4' : '1px solid #d6d3d1',
-              background: page <= 1 ? '#f5f5f4' : '#ffffff',
-              color: page <= 1 ? '#d6d3d1' : '#57534e',
-            }}
-            onClick={() => page > 1 && setPage(page - 1)}
-          >
-            <Text>← 上一页</Text>
-          </View>
-
-          <View className="flex items-center gap-1">
-            {(() => {
-              const pages: number[] = [];
-              if (totalPages <= 7) {
-                for (let i = 1; i <= totalPages; i++) pages.push(i);
-              } else if (page <= 4) {
-                for (let i = 1; i <= 7; i++) pages.push(i);
-              } else if (page >= totalPages - 3) {
-                for (let i = totalPages - 6; i <= totalPages; i++) pages.push(i);
-              } else {
-                for (let i = page - 3; i <= page + 3; i++) pages.push(i);
-              }
-              return pages.map((p) => (
-                <View
-                  key={p}
-                  style={{
-                    padding: '8px 12px',
-                    borderRadius: 4,
-                    cursor: 'pointer',
-                    fontSize: 14,
-                    background: p === page ? '#0f766e' : 'transparent',
-                    color: p === page ? '#ffffff' : '#57534e',
-                    fontWeight: p === page ? 600 : 400,
-                  }}
-                  onClick={() => setPage(p)}
-                >
-                  <Text>{p}</Text>
-                </View>
-              ));
-            })()}
-          </View>
-
-          <View
-            style={{
-              padding: '8px 16px',
-              borderRadius: 4,
-              cursor: 'pointer',
-              fontSize: 14,
-              border:
-                page >= totalPages ? '1px solid #e7e5e4' : '1px solid #d6d3d1',
-              background: page >= totalPages ? '#f5f5f4' : '#ffffff',
-              color: page >= totalPages ? '#d6d3d1' : '#57534e',
-            }}
-            onClick={() => page < totalPages && setPage(page + 1)}
-          >
-            <Text>下一页 →</Text>
-          </View>
-
-          <Text style={{ fontSize: 12, marginLeft: 8, color: '#a8a29e' }}>
-            共 {totalPages} 页
-          </Text>
-        </View>
-      )}
+      <Pagination page={page} totalPages={Math.ceil(total / 20)} total={total} onPrev={() => setPage(page - 1)} onNext={() => setPage(page + 1)} />
     </AppShell>
   );
 }

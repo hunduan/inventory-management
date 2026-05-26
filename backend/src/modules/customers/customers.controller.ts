@@ -3,6 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { CustomersService } from './customers.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TenantId } from '../../common/decorators/tenant.decorator';
+import { CreateCustomerDto } from './dto/create-customer.dto';
+import { UpdateCustomerDto } from './dto/update-customer.dto';
 
 @ApiTags('客户')
 @ApiBearerAuth()
@@ -25,14 +27,14 @@ export class CustomersController {
 
   @Post()
   @ApiOperation({ summary: '创建客户' })
-  async create(@TenantId() tenantId: string, @Body() data: { name: string; phone?: string; email?: string; address?: string; contact?: string; remark?: string }) {
-    return this.customersService.create(tenantId, data);
+  async create(@TenantId() tenantId: string, @Body() dto: CreateCustomerDto) {
+    return this.customersService.create(tenantId, dto);
   }
 
   @Patch(':id')
   @ApiOperation({ summary: '更新客户' })
-  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() data: any) {
-    return this.customersService.update(tenantId, id, data);
+  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() dto: UpdateCustomerDto) {
+    return this.customersService.update(tenantId, id, dto);
   }
 
   @Delete(':id')
