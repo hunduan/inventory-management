@@ -60,10 +60,10 @@ export class StocktakeService {
     if (stocktake.status !== 'DRAFT') throw new BadRequestException('盘点单状态不正确');
 
     const result = await this.prisma.stocktake.updateMany({
-      where: { id, tenantId },
+      where: { id, tenantId, status: 'DRAFT' },
       data: { status: 'IN_PROGRESS' },
     });
-    if (result.count === 0) throw new NotFoundException('盘点单不存在');
+    if (result.count === 0) throw new BadRequestException('盘点单状态已变化，请刷新后重试');
     return this.findById(tenantId, id);
   }
 
@@ -76,6 +76,12 @@ export class StocktakeService {
     if (stocktake.status !== 'IN_PROGRESS') throw new BadRequestException('盘点单状态不正确');
 
     await this.prisma.$transaction(async (tx) => {
+      const statusResult = await tx.stocktake.updateMany({
+        where: { id, tenantId, status: 'IN_PROGRESS' },
+        data: { status: 'COMPLETED' },
+      });
+      if (statusResult.count === 0) throw new BadRequestException('盘点单状态已变化，请刷新后重试');
+
       for (const item of stocktake.items) {
         const diff = Number(item.actualQuantity) - Number(item.bookQuantity);
         if (diff === 0) continue;
@@ -86,10 +92,11 @@ export class StocktakeService {
         if (inv) {
           const oldQty = Number(inv.quantity);
           const newQty = oldQty + diff;
-          await tx.inventory.update({
+          const updateResult = await tx.inventory.updateMany({
             where: { id: inv.id },
             data: { quantity: newQty },
           });
+          if (updateResult.count === 0) throw new BadRequestException('库存记录已变化，请刷新后重试');
           await tx.inventoryLog.create({
             data: {
               tenantId, productId: item.productId, warehouseId: stocktake.warehouseId,
@@ -99,8 +106,6 @@ export class StocktakeService {
           });
         }
       }
-
-      await tx.stocktake.updateMany({ where: { id, tenantId }, data: { status: 'COMPLETED' } });
     });
 
     return this.findById(tenantId, id);
@@ -113,8 +118,11 @@ export class StocktakeService {
     if (!stocktake) throw new NotFoundException('盘点单不存在');
     if (stocktake.status === 'COMPLETED') throw new BadRequestException('已完成的盘点单不能作废');
 
-    const result = await this.prisma.stocktake.updateMany({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
-    if (result.count === 0) throw new NotFoundException('盘点单不存在');
+    const result = await this.prisma.stocktake.updateMany({
+      where: { id, tenantId, status: { in: ['DRAFT', 'IN_PROGRESS'] } },
+      data: { status: 'CANCELLED' },
+    });
+    if (result.count === 0) throw new BadRequestException('盘点单状态已变化，请刷新后重试');
     return this.findById(tenantId, id);
   }
 }

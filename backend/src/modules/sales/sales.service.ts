@@ -73,8 +73,15 @@ export class SalesService {
   }
 
   async confirm(tenantId: string, id: string) {
-    const result = await this.prisma.saleOrder.updateMany({ where: { id, tenantId }, data: { status: 'CONFIRMED' } });
-    if (result.count === 0) throw new NotFoundException('销售单不存在');
+    const order = await this.prisma.saleOrder.findFirst({ where: { id, tenantId } });
+    if (!order) throw new NotFoundException('销售单不存在');
+    if (order.status !== 'DRAFT') throw new BadRequestException('只有草稿销售单可以确认');
+
+    const result = await this.prisma.saleOrder.updateMany({
+      where: { id, tenantId, status: 'DRAFT' },
+      data: { status: 'CONFIRMED' },
+    });
+    if (result.count === 0) throw new BadRequestException('销售单状态已变化，请刷新后重试');
     return this.findById(tenantId, id);
   }
 
@@ -88,6 +95,12 @@ export class SalesService {
     if (!order.warehouseId) throw new BadRequestException('销售单未指定仓库');
 
     await this.prisma.$transaction(async (tx) => {
+      const statusResult = await tx.saleOrder.updateMany({
+        where: { id, tenantId, status: 'CONFIRMED' },
+        data: { status: 'DELIVERED' },
+      });
+      if (statusResult.count === 0) throw new BadRequestException('销售单状态已变化，请刷新后重试');
+
       for (const item of order.items) {
         const inv = await tx.inventory.findFirst({
           where: { tenantId, productId: item.productId, warehouseId: order.warehouseId! },
@@ -98,10 +111,13 @@ export class SalesService {
         }
 
         const newQty = Number(inv.quantity) - Number(item.quantity);
-        await tx.inventory.update({
-          where: { id: inv.id },
+        const updateResult = await tx.inventory.updateMany({
+          where: { id: inv.id, quantity: { gte: item.quantity } },
           data: { quantity: newQty },
         });
+        if (updateResult.count === 0) {
+          throw new BadRequestException(`商品 ${item.product.name} 库存不足或已变化`);
+        }
         await tx.inventoryLog.create({
           data: {
             tenantId, productId: item.productId, warehouseId: order.warehouseId,
@@ -111,19 +127,22 @@ export class SalesService {
           },
         });
       }
-
-      await tx.saleOrder.updateMany({
-        where: { id, tenantId },
-        data: { status: 'DELIVERED' },
-      });
     });
 
     return this.findById(tenantId, id);
   }
 
   async cancel(tenantId: string, id: string) {
-    const result = await this.prisma.saleOrder.updateMany({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
-    if (result.count === 0) throw new NotFoundException('销售单不存在');
+    const order = await this.prisma.saleOrder.findFirst({ where: { id, tenantId } });
+    if (!order) throw new NotFoundException('销售单不存在');
+    if (order.status === 'DELIVERED') throw new BadRequestException('已出库销售单不能取消');
+    if (order.status === 'CANCELLED') throw new BadRequestException('销售单已取消');
+
+    const result = await this.prisma.saleOrder.updateMany({
+      where: { id, tenantId, status: { in: ['DRAFT', 'CONFIRMED'] } },
+      data: { status: 'CANCELLED' },
+    });
+    if (result.count === 0) throw new BadRequestException('销售单状态已变化，请刷新后重试');
     return this.findById(tenantId, id);
   }
 }

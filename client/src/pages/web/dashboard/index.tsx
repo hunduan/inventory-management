@@ -35,7 +35,7 @@ export default function DashboardPage() {
 
       setRecentPurchases(purchasesRes.items || []);
       setRecentSales(salesRes.items || []);
-      const lowStockItems = alertsRes.items || [];
+      const lowStockItems = Array.isArray(alertsRes) ? alertsRes : [];
       setSummary(s => ({ ...s, lowStockCount: lowStockItems.length }));
 
       try {

@@ -31,7 +31,17 @@ export class RolesGuard implements CanActivate {
     });
     if (!dbUser?.role) return false;
 
-    const userPermissions: string[] = dbUser.role.permissions as any;
-    return requiredPermissions.some((p) => userPermissions.includes(p));
+    const userPermissions = dbUser.role.permissions as string[];
+    return requiredPermissions.some((permission) =>
+      userPermissions.some((ownedPermission) => this.matchesPermission(ownedPermission, permission)),
+    );
+  }
+
+  private matchesPermission(ownedPermission: string, requiredPermission: string): boolean {
+    if (ownedPermission === requiredPermission || ownedPermission === '*') return true;
+    if (!ownedPermission.endsWith('.*')) return false;
+
+    const namespace = ownedPermission.slice(0, -2);
+    return requiredPermission === namespace || requiredPermission.startsWith(`${namespace}.`);
   }
 }

@@ -8,7 +8,18 @@ const LOGIN_PATH = process.env.TARO_ENV === 'weapp'
 
 interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'DELETE';
-  data?: any;
+  data?: unknown;
+}
+
+class ApiError extends Error {
+  constructor(
+    message: string,
+    public statusCode?: number,
+    public payload?: unknown,
+  ) {
+    super(message);
+    this.name = 'ApiError';
+  }
 }
 
 export async function request<T = any>(url: string, options: RequestOptions = {}): Promise<T> {
@@ -26,7 +37,8 @@ export async function request<T = any>(url: string, options: RequestOptions = {}
     });
 
     if (response.statusCode >= 400) {
-      throw new Error(response.data.error || response.data.message || '请求失败');
+      const data = response.data as { error?: string; message?: string } | undefined;
+      throw new ApiError(data?.error || data?.message || '请求失败', response.statusCode, response.data);
     }
     return response.data;
   } catch (err: any) {
@@ -40,7 +52,7 @@ export async function request<T = any>(url: string, options: RequestOptions = {}
 
 export const api = {
   get: <T>(url: string) => request<T>(url),
-  post: <T>(url: string, data?: any) => request<T>(url, { method: 'POST', data }),
-  patch: <T>(url: string, data?: any) => request<T>(url, { method: 'PATCH', data }),
+  post: <T>(url: string, data?: unknown) => request<T>(url, { method: 'POST', data }),
+  patch: <T>(url: string, data?: unknown) => request<T>(url, { method: 'PATCH', data }),
   delete: <T>(url: string) => request<T>(url, { method: 'DELETE' }),
 };

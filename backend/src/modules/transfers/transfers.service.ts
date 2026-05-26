@@ -47,8 +47,11 @@ export class TransfersService {
     if (!transfer) throw new NotFoundException('调拨单不存在');
     if (transfer.status !== 'DRAFT') throw new BadRequestException('调拨单状态不正确');
 
-    const result = await this.prisma.transfer.updateMany({ where: { id, tenantId }, data: { status: 'CONFIRMED' } });
-    if (result.count === 0) throw new NotFoundException('调拨单不存在');
+    const result = await this.prisma.transfer.updateMany({
+      where: { id, tenantId, status: 'DRAFT' },
+      data: { status: 'CONFIRMED' },
+    });
+    if (result.count === 0) throw new BadRequestException('调拨单状态已变化，请刷新后重试');
     return this.findById(tenantId, id);
   }
 
@@ -61,6 +64,12 @@ export class TransfersService {
     if (transfer.status !== 'CONFIRMED') throw new BadRequestException('调拨单未确认');
 
     await this.prisma.$transaction(async (tx) => {
+      const statusResult = await tx.transfer.updateMany({
+        where: { id, tenantId, status: 'CONFIRMED' },
+        data: { status: 'COMPLETED' },
+      });
+      if (statusResult.count === 0) throw new BadRequestException('调拨单状态已变化，请刷新后重试');
+
       for (const item of transfer.items) {
         // Deduct from source
         const fromInv = await tx.inventory.findFirst({
@@ -72,7 +81,11 @@ export class TransfersService {
 
         const fromOldQty = Number(fromInv.quantity);
         const fromNewQty = fromOldQty - Number(item.quantity);
-        await tx.inventory.update({ where: { id: fromInv.id }, data: { quantity: fromNewQty } });
+        const fromUpdateResult = await tx.inventory.updateMany({
+          where: { id: fromInv.id, quantity: { gte: item.quantity } },
+          data: { quantity: fromNewQty },
+        });
+        if (fromUpdateResult.count === 0) throw new BadRequestException('源仓库库存不足或已变化，无法调拨');
         await tx.inventoryLog.create({
           data: { tenantId, productId: item.productId, warehouseId: transfer.fromWarehouseId,
             type: 'TRANSFER_OUT', quantity: -Number(item.quantity), beforeQty: fromOldQty, afterQty: fromNewQty,
@@ -86,7 +99,11 @@ export class TransfersService {
         if (toInv) {
           const toOldQty = Number(toInv.quantity);
           const toNewQty = toOldQty + Number(item.quantity);
-          await tx.inventory.update({ where: { id: toInv.id }, data: { quantity: toNewQty } });
+          const toUpdateResult = await tx.inventory.updateMany({
+            where: { id: toInv.id },
+            data: { quantity: toNewQty },
+          });
+          if (toUpdateResult.count === 0) throw new BadRequestException('目标仓库库存记录已变化，请刷新后重试');
           await tx.inventoryLog.create({
             data: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId,
               type: 'TRANSFER_IN', quantity: item.quantity, beforeQty: toOldQty, afterQty: toNewQty,
@@ -96,10 +113,13 @@ export class TransfersService {
           await tx.inventory.create({
             data: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId, quantity: item.quantity, unitCost: 0 },
           });
+          await tx.inventoryLog.create({
+            data: { tenantId, productId: item.productId, warehouseId: transfer.toWarehouseId,
+              type: 'TRANSFER_IN', quantity: item.quantity, beforeQty: 0, afterQty: Number(item.quantity),
+              refId: transfer.id, refType: 'TRANSFER' },
+          });
         }
       }
-
-      await tx.transfer.updateMany({ where: { id, tenantId }, data: { status: 'COMPLETED' } });
     });
 
     return this.findById(tenantId, id);
@@ -112,8 +132,11 @@ export class TransfersService {
     if (!transfer) throw new NotFoundException('调拨单不存在');
     if (transfer.status === 'COMPLETED') throw new BadRequestException('已完成的调拨单不能作废');
 
-    const result = await this.prisma.transfer.updateMany({ where: { id, tenantId }, data: { status: 'CANCELLED' } });
-    if (result.count === 0) throw new NotFoundException('调拨单不存在');
+    const result = await this.prisma.transfer.updateMany({
+      where: { id, tenantId, status: { in: ['DRAFT', 'CONFIRMED'] } },
+      data: { status: 'CANCELLED' },
+    });
+    if (result.count === 0) throw new BadRequestException('调拨单状态已变化，请刷新后重试');
     return this.findById(tenantId, id);
   }
 }
