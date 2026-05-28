@@ -4,16 +4,10 @@ import { inventoryApi } from '../../../services/inventory';
 import { warehousesApi } from '../../../services/warehouses';
 import Taro from '@tarojs/taro';
 
-const STOCK_BADGE: Record<string, { label: string; bg: string; text: string }> = {
-  NORMAL: { label: '正常', bg: '#f0fdf4', text: '#166534' },
-  LOW: { label: '偏低', bg: '#fffbeb', text: '#92400e' },
-  EMPTY: { label: '缺货', bg: '#fef2f2', text: '#dc2626' },
-};
-
 const getStatus = (qty: number) => {
-  if (qty <= 0) return STOCK_BADGE.EMPTY;
-  if (qty < 10) return STOCK_BADGE.LOW;
-  return STOCK_BADGE.NORMAL;
+  if (qty <= 0) return { label: '缺货', bg: '#fef2f2', text: '#dc2626' };
+  if (qty < 10) return { label: '偏低', bg: '#fffbeb', text: '#92400e' };
+  return { label: '正常', bg: '#f0fdf4', text: '#166534' };
 };
 
 export default function MiniInventoryPage() {
@@ -44,7 +38,7 @@ export default function MiniInventoryPage() {
   const warehouseNames = warehouses.map((w: any) => w.name);
   const goto = (url: string) => Taro.navigateTo({ url });
 
-  const lowStockCount = items.filter((i: any) => (i.quantity || 0) < 10).length;
+  const lowItems = items.filter((i: any) => (i.quantity || 0) < 10);
 
   return (
     <View style={{ backgroundColor: '#f5f5f4', minHeight: '100vh' }}>
@@ -81,31 +75,16 @@ export default function MiniInventoryPage() {
         </View>
       </View>
 
-      {/* Low stock alert */}
-      {lowStockCount > 0 && (
-        <View style={{ marginLeft: 16, marginRight: 16, marginBottom: 12, backgroundColor: '#fffbeb', borderRadius: 12, padding: '10px 14px', flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <Text style={{ fontSize: 16 }}>⚠️</Text>
-          <Text style={{ fontSize: 12, color: '#92400e', flex: 1 }}>{lowStockCount} 种商品库存不足</Text>
+      {/* Low stock alert - show product names, compact */}
+      {lowItems.length > 0 && (
+        <View style={{ marginLeft: 16, marginRight: 16, marginBottom: 12, backgroundColor: '#fffbeb', borderRadius: 12, padding: '10px 14px' }}>
+          <Text style={{ fontSize: 12, fontWeight: 600, color: '#92400e', marginBottom: 4 }}>库存不足 ({lowItems.length} 种)</Text>
+          <Text style={{ fontSize: 11, color: '#92400e' }} numberOfLines={2} ellipsizeMode="tail">
+            {lowItems.slice(0, 4).map((i: any) => i.product?.name || '-').join('、')}
+            {lowItems.length > 4 ? ' 等' : ''}
+          </Text>
         </View>
       )}
-
-      {/* Stock Stats */}
-      <View style={{ paddingLeft: 16, paddingRight: 16, marginBottom: 16 }}>
-        <View style={{ flexDirection: 'row', gap: 10 }}>
-          <View style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: 12, padding: 14, alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: 700, color: '#0f766e' }}>{items.length}</Text>
-            <Text style={{ fontSize: 11, color: '#a8a29e', marginTop: 2 }}>商品种类</Text>
-          </View>
-          <View style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: 12, padding: 14, alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: 700, color: '#d97706' }}>{items.reduce((s: number, i: any) => s + (i.quantity || 0), 0)}</Text>
-            <Text style={{ fontSize: 11, color: '#a8a29e', marginTop: 2 }}>总数量</Text>
-          </View>
-          <View style={{ flex: 1, backgroundColor: '#ffffff', borderRadius: 12, padding: 14, alignItems: 'center' }}>
-            <Text style={{ fontSize: 20, fontWeight: 700, color: '#dc2626' }}>{lowStockCount}</Text>
-            <Text style={{ fontSize: 11, color: '#a8a29e', marginTop: 2 }}>缺货/偏低</Text>
-          </View>
-        </View>
-      </View>
 
       {/* Inventory List */}
       <ScrollView scrollY style={{ flex: 1, paddingLeft: 16, paddingRight: 16 }}>
@@ -120,16 +99,16 @@ export default function MiniInventoryPage() {
           items.map((item: any, idx: number) => {
             const status = getStatus(item.quantity || 0);
             return (
-              <View key={item.id || idx} style={{ backgroundColor: '#ffffff', borderRadius: 14, padding: 16, marginBottom: 10 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                  <Text style={{ fontSize: 14, fontWeight: 600, color: '#1c1917' }}>{item.product?.name || item.productName || '-'}</Text>
-                  <View style={{ backgroundColor: status.bg, paddingLeft: 8, paddingRight: 8, paddingTop: 3, paddingBottom: 3, borderRadius: 6 }}>
-                    <Text style={{ fontSize: 11, fontWeight: 500, color: status.text }}>{status.label}</Text>
+              <View key={item.id || idx} style={{ backgroundColor: '#ffffff', borderRadius: 12, padding: 14, marginBottom: 8 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: 6 }}>
+                  <Text style={{ fontSize: 13, fontWeight: 600, color: '#1c1917' }}>{item.product?.name || item.productName || '-'}</Text>
+                  <View style={{ backgroundColor: status.bg, paddingLeft: 6, paddingRight: 6, paddingTop: 2, paddingBottom: 2, borderRadius: 4 }}>
+                    <Text style={{ fontSize: 10, fontWeight: 500, color: status.text }}>{status.label}</Text>
                   </View>
                 </View>
                 <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-                  <Text style={{ fontSize: 12, color: '#a8a29e' }}>{item.product?.barcode || item.barcode || '-'}</Text>
-                  <Text style={{ fontSize: 20, fontWeight: 700, color: '#1c1917' }}>{item.quantity || 0} <Text style={{ fontSize: 12, color: '#a8a29e' }}>{item.unit || '个'}</Text></Text>
+                  <Text style={{ fontSize: 11, color: '#a8a29e' }}>{item.product?.barcode || item.barcode || '-'}</Text>
+                  <Text style={{ fontSize: 18, fontWeight: 700, color: '#1c1917' }}>{item.quantity || 0} <Text style={{ fontSize: 11, color: '#a8a29e' }}>{item.unit || '个'}</Text></Text>
                 </View>
               </View>
             );

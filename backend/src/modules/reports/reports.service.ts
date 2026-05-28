@@ -90,4 +90,64 @@ export class ReportsService {
 
     return { totalRevenue, totalCost, grossProfit, totalProfit: grossProfit, margin: Math.round(margin * 100) / 100 };
   }
+
+  async dashboard(tenantId: string) {
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const [
+      todayPurchaseOrders, todayPurchaseAmount,
+      todaySaleOrders, todaySaleAmount,
+      monthPurchaseAmount, monthSaleAmount,
+      lowStockItems, totalProducts,
+    ] = await Promise.all([
+      this.prisma.purchaseOrder.count({ where: { tenantId, createdAt: { gte: todayStart } } }),
+      this.prisma.purchaseOrder.aggregate({ where: { tenantId, createdAt: { gte: todayStart }, status: 'RECEIVED' }, _sum: { totalAmount: true } }),
+      this.prisma.saleOrder.count({ where: { tenantId, createdAt: { gte: todayStart } } }),
+      this.prisma.saleOrder.aggregate({ where: { tenantId, createdAt: { gte: todayStart }, status: 'DELIVERED' }, _sum: { totalAmount: true } }),
+      this.prisma.purchaseOrder.aggregate({ where: { tenantId, createdAt: { gte: monthStart }, status: 'RECEIVED' }, _sum: { totalAmount: true } }),
+      this.prisma.saleOrder.aggregate({ where: { tenantId, createdAt: { gte: monthStart }, status: 'DELIVERED' }, _sum: { totalAmount: true } }),
+      this.prisma.inventory.count({ where: { tenantId, quantity: { lt: 10 } } }),
+      this.prisma.product.count({ where: { tenantId, enabled: true } }),
+    ]);
+
+    return {
+      today: {
+        purchaseOrders: todayPurchaseOrders,
+        purchaseAmount: Number(todayPurchaseAmount._sum.totalAmount || 0),
+        saleOrders: todaySaleOrders,
+        saleAmount: Number(todaySaleAmount._sum.totalAmount || 0),
+      },
+      month: {
+        purchaseAmount: Number(monthPurchaseAmount._sum.totalAmount || 0),
+        saleAmount: Number(monthSaleAmount._sum.totalAmount || 0),
+      },
+      lowStockCount: lowStockItems,
+      totalProducts,
+    };
+  }
+
+  async inventoryValue(tenantId: string) {
+    const items = await this.prisma.inventory.findMany({
+      where: { tenantId, quantity: { gt: 0 } },
+      include: { warehouse: true, product: true },
+    });
+
+    const byWarehouse: Record<string, { warehouseName: string; itemCount: number; totalValue: number }> = {};
+    let grandTotal = 0;
+
+    for (const item of items) {
+      const whId = item.warehouseId;
+      if (!byWarehouse[whId]) {
+        byWarehouse[whId] = { warehouseName: item.warehouse?.name || '未知', itemCount: 0, totalValue: 0 };
+      }
+      const value = Number(item.quantity) * Number(item.unitCost);
+      byWarehouse[whId].itemCount++;
+      byWarehouse[whId].totalValue += value;
+      grandTotal += value;
+    }
+
+    return { grandTotal, byWarehouse: Object.values(byWarehouse) };
+  }
 }

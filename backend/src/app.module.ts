@@ -17,6 +17,7 @@ import { TransfersModule } from './modules/transfers/transfers.module';
 import { InventoryModule } from './modules/inventory/inventory.module';
 import { ReportsModule } from './modules/reports/reports.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { RolesModule } from './modules/roles/roles.module';
 import { AllExceptionsFilter } from './common/filters/http-exception.filter';
 import { RolesGuard } from './common/guards/roles.guard';
 
@@ -39,6 +40,7 @@ import { RolesGuard } from './common/guards/roles.guard';
     InventoryModule,
     ReportsModule,
     UploadModule,
+    RolesModule,
   ],
   providers: [
     { provide: APP_FILTER, useClass: AllExceptionsFilter },

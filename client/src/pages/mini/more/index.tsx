@@ -5,6 +5,7 @@ const TOOLS = [
   { label: '商品管理', icon: '🏷️', path: '/pages/mini/products/index', bg: '#f0fdfa', desc: '查看和管理商品' },
   { label: '订单查询', icon: '📋', path: '/pages/mini/orders/list', bg: '#fef2f2', desc: '采购/销售订单' },
   { label: '库存调拨', icon: '🔄', path: '/pages/mini/transfers/index', bg: '#f5f3ff', desc: '仓库间调拨' },
+  { label: '库存盘点', icon: '📝', path: '/pages/mini/stocktake/index', bg: '#fffbeb', desc: '盘点库存数量' },
   { label: '扫码识别', icon: '📱', path: '/pages/mini/scan/index', bg: '#f0fdfa', desc: '扫描条码' },
   { label: '语音录入', icon: '🎤', path: '/pages/mini/voice/index', bg: '#fffbeb', desc: '语音建单' },
   { label: '拍照识别', icon: '📷', path: '/pages/mini/photo/index', bg: '#f0f9ff', desc: 'OCR识别商品' },

@@ -19,6 +19,9 @@ const webPages = [
   'pages/web/reports/index',
   'pages/web/settings/index',
   'pages/web/register/index',
+  'pages/web/users/index',
+  'pages/web/roles/index',
+  'pages/web/tenants/index',
 ];
 
 const miniPages = [
@@ -37,6 +40,7 @@ const miniPages = [
   'pages/mini/orders/detail',
   'pages/mini/products/index',
   'pages/mini/transfers/index',
+  'pages/mini/stocktake/index',
 ];
 
 export default {
@@ -55,8 +59,8 @@ export default {
       borderStyle: 'white',
       list: [
         { pagePath: 'pages/mini/index/index', text: '首页', iconPath: 'assets/icons/home.png', selectedIconPath: 'assets/icons/home.png' },
-        { pagePath: 'pages/mini/purchase-list/index', text: '入库', iconPath: 'assets/icons/purchase.png', selectedIconPath: 'assets/icons/purchase.png' },
-        { pagePath: 'pages/mini/sale-list/index', text: '出库', iconPath: 'assets/icons/sale.png', selectedIconPath: 'assets/icons/sale.png' },
+        { pagePath: 'pages/mini/purchase-list/index', text: '采购', iconPath: 'assets/icons/purchase.png', selectedIconPath: 'assets/icons/purchase.png' },
+        { pagePath: 'pages/mini/sale-list/index', text: '销售', iconPath: 'assets/icons/sale.png', selectedIconPath: 'assets/icons/sale.png' },
         { pagePath: 'pages/mini/inventory/index', text: '库存', iconPath: 'assets/icons/inventory.png', selectedIconPath: 'assets/icons/inventory.png' },
         { pagePath: 'pages/mini/more/index', text: '更多', iconPath: 'assets/icons/more.png', selectedIconPath: 'assets/icons/more.png' },
       ],

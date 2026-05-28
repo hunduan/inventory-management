@@ -27,14 +27,28 @@ export default function MiniProductsPage() {
         </Text>
       </View>
 
-      <View className="p-4">
+      <View className="p-4" style={{ flexDirection: 'row', gap: 10 }}>
         <Input
-          className="input-field mb-4"
+          className="input-field"
+          style={{ flex: 1 }}
           placeholder="搜索商品名称或条码"
           value={search}
           onInput={(e) => setSearch(e.detail.value)}
           onConfirm={() => loadProducts(search)}
         />
+        <View
+          style={{ backgroundColor: '#0f766e', borderRadius: 6, paddingHorizontal: 14, paddingVertical: 10, alignItems: 'center' }}
+          onClick={async () => {
+            try {
+              const res = await Taro.scanCode({ scanType: ['barCode', 'qrCode'] });
+              const barcode = res.result;
+              setSearch(barcode);
+              loadProducts(barcode);
+            } catch { /* cancelled */ }
+          }}
+        >
+          <Text style={{ fontSize: 13, color: '#ffffff', fontWeight: 500 }}>扫码</Text>
+        </View>
       </View>
 
       <View className="px-4 pb-8">

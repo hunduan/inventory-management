@@ -46,4 +46,16 @@ export class ReportsController {
   ) {
     return this.reportsService.profitReport(tenantId, new Date(startDate), new Date(endDate));
   }
+
+  @Get('dashboard')
+  @ApiOperation({ summary: 'Dashboard 汇总数据' })
+  async dashboard(@TenantId() tenantId: string) {
+    return this.reportsService.dashboard(tenantId);
+  }
+
+  @Get('inventory-value')
+  @ApiOperation({ summary: '库存价值报表' })
+  async inventoryValue(@TenantId() tenantId: string) {
+    return this.reportsService.inventoryValue(tenantId);
+  }
 }

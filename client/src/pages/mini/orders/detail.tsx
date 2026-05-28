@@ -133,6 +133,52 @@ export default function OrderDetailPage() {
           </View>
         )}
 
+        {/* Actions for DRAFT orders */}
+        {order.status === 'DRAFT' && (
+          <View style={{ flexDirection: 'row', gap: 10, marginBottom: 12 }}>
+            <View
+              style={{ flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', backgroundColor: '#0f766e' }}
+              onClick={async () => {
+                try {
+                  if (order._type === 'PURCHASE') await purchasesApi.receive(order.id);
+                  else await salesApi.deliver(order.id);
+                  Taro.showToast({ title: '操作成功', icon: 'success' });
+                  Taro.navigateBack();
+                } catch (err: any) {
+                  Taro.showToast({ title: err.message || '操作失败', icon: 'none' });
+                }
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: 600, color: '#ffffff' }}>
+                {order._type === 'PURCHASE' ? '确认入库' : '确认出库'}
+              </Text>
+            </View>
+            <View
+              style={{ flex: 1, paddingVertical: 12, borderRadius: 10, alignItems: 'center', border: '1px solid #fecaca', backgroundColor: '#fef2f2' }}
+              onClick={async () => {
+                Taro.showModal({
+                  title: '确认取消',
+                  content: '确定要取消此订单吗？',
+                  success: async (res) => {
+                    if (res.confirm) {
+                      try {
+                        if (order._type === 'PURCHASE') await purchasesApi.cancel(order.id);
+                        else await salesApi.cancel(order.id);
+                        Taro.showToast({ title: '已取消', icon: 'success' });
+                        Taro.navigateBack();
+                      } catch (err: any) {
+                        Taro.showToast({ title: err.message || '操作失败', icon: 'none' });
+                      }
+                    }
+                  },
+                });
+              }}
+            >
+              <Text style={{ fontSize: 14, fontWeight: 600, color: '#dc2626' }}>取消订单</Text>
+            </View>
+          </View>
+        )}
+
         {/* Back */}
         <View
           className="w-full py-3 flex items-center justify-center rounded cursor-pointer"

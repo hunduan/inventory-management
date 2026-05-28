@@ -16,6 +16,9 @@ const NAV_ITEMS = [
   { label: '调拨', path: '/pages/web/transfers/index', char: '调' },
   { label: '报表', path: '/pages/web/reports/index', char: '表' },
   { label: '设置', path: '/pages/web/settings/index', char: '设' },
+  { label: '用户', path: '/pages/web/users/index', char: '员' },
+  { label: '角色', path: '/pages/web/roles/index', char: '权' },
+  { label: '租户', path: '/pages/web/tenants/index', char: '租' },
 ];
 
 export default function AppShell({ children }: PropsWithChildren) {

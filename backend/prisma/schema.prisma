@@ -27,6 +27,7 @@ model Tenant {
   purchaseOrders PurchaseOrder[]
   saleOrders     SaleOrder[]
   stocktakes     Stocktake[]
+  stocktakeItems StocktakeItem[]
   transfers      Transfer[]
   purchaseItems  PurchaseItem[]
   saleItems      SaleItem[]
@@ -222,7 +223,7 @@ enum PurchaseStatus {
 model PurchaseOrder {
   id          String         @id @default(uuid()) @db.Uuid
   tenantId    String         @map("tenant_id") @db.Uuid
-  orderNo     String         @unique @map("order_no") @db.VarChar(50)
+  orderNo     String         @map("order_no") @db.VarChar(50)
   supplierId  String?        @map("supplier_id") @db.Uuid
   warehouseId String?        @map("warehouse_id") @db.Uuid
   totalAmount Decimal        @default(0) @map("total_amount") @db.Decimal(12, 2)
@@ -269,7 +270,7 @@ enum SaleStatus {
 model SaleOrder {
   id          String     @id @default(uuid()) @db.Uuid
   tenantId    String     @map("tenant_id") @db.Uuid
-  orderNo     String     @unique @map("order_no") @db.VarChar(50)
+  orderNo     String     @map("order_no") @db.VarChar(50)
   customerId  String?    @map("customer_id") @db.Uuid
   warehouseId String?    @map("warehouse_id") @db.Uuid
   totalAmount Decimal    @default(0) @map("total_amount") @db.Decimal(12, 2)
@@ -334,15 +335,18 @@ model Stocktake {
 
 model StocktakeItem {
   id             String  @id @default(uuid()) @db.Uuid
+  tenantId       String  @map("tenant_id") @db.Uuid
   stocktakeId    String  @map("stocktake_id") @db.Uuid
   productId      String  @map("product_id") @db.Uuid
   bookQuantity   Decimal @map("book_qty") @db.Decimal(12, 2)
   actualQuantity Decimal @map("actual_qty") @db.Decimal(12, 2)
   diffQuantity   Decimal @map("diff_qty") @db.Decimal(12, 2)
 
+  tenant    Tenant    @relation(fields: [tenantId], references: [id])
   stocktake Stocktake @relation(fields: [stocktakeId], references: [id], onDelete: Cascade)
   product   Product   @relation(fields: [productId], references: [id])
 
+  @@index([tenantId])
   @@map("stocktake_items")
 }
 

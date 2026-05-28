@@ -41,6 +41,7 @@ export class StocktakeService {
         status: 'DRAFT', createdBy: userId,
         items: {
           create: inventoryItems.map((inv) => ({
+            tenantId,
             productId: inv.productId,
             bookQuantity: inv.quantity,
             actualQuantity: inv.quantity,

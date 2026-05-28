@@ -26,8 +26,8 @@ export default function DashboardPage() {
   const loadDashboard = async () => {
     setLoading(true);
     try {
-      const today = new Date().toISOString().slice(0, 10);
-      const [purchasesRes, salesRes, alertsRes] = await Promise.all([
+      const [dashData, purchasesRes, salesRes, alertsRes] = await Promise.all([
+        reportsApi.dashboard().catch(() => null),
         purchasesApi.list('page=1&limit=5'),
         salesApi.list('page=1&limit=5'),
         inventoryApi.alerts(10),
@@ -36,19 +36,16 @@ export default function DashboardPage() {
       setRecentPurchases(purchasesRes.items || []);
       setRecentSales(salesRes.items || []);
       const lowStockItems = Array.isArray(alertsRes) ? alertsRes : [];
-      setSummary(s => ({ ...s, lowStockCount: lowStockItems.length }));
 
-      try {
-        const [salesReport, purchaseReport] = await Promise.all([
-          reportsApi.sales(`startDate=${today}&endDate=${today}&page=1&limit=1`),
-          reportsApi.purchases(`startDate=${today}&endDate=${today}&page=1&limit=1`),
-        ]);
+      if (dashData) {
         setSummary({
-          todaySales: salesReport.totalAmount || 0,
-          todayPurchases: purchaseReport.totalAmount || 0,
-          lowStockCount: lowStockItems.length,
+          todaySales: dashData.today?.saleAmount || 0,
+          todayPurchases: dashData.today?.purchaseAmount || 0,
+          lowStockCount: dashData.lowStockCount ?? lowStockItems.length,
         });
-      } catch { /* reports optional */ }
+      } else {
+        setSummary(s => ({ ...s, lowStockCount: lowStockItems.length }));
+      }
     } catch { /* ignore */ } finally {
       setLoading(false);
     }
