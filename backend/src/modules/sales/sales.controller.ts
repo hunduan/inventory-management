@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { SalesService } from './sales.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TenantId } from '../../common/decorators/tenant.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CreateSaleDto } from './dto/create-sale.dto';
+import { UpdateSaleDto, DeliverItemDto } from './dto/update-sale.dto';
 
 @ApiTags('销售')
 @ApiBearerAuth()
@@ -47,5 +48,17 @@ export class SalesController {
   @ApiOperation({ summary: '作废销售单' })
   async cancel(@TenantId() tenantId: string, @Param('id') id: string) {
     return this.salesService.cancel(tenantId, id);
+  }
+
+  @Put(':id')
+  @ApiOperation({ summary: '编辑销售单（仅 DRAFT/CONFIRMED）' })
+  async update(@TenantId() tenantId: string, @Param('id') id: string, @Body() dto: UpdateSaleDto) {
+    return this.salesService.update(tenantId, id, dto);
+  }
+
+  @Post(':id/deliver-item')
+  @ApiOperation({ summary: '单行出库' })
+  async deliverItem(@TenantId() tenantId: string, @Param('id') id: string, @Body() dto: DeliverItemDto) {
+    return this.salesService.deliverItem(tenantId, id, dto.itemId, dto.quantity);
   }
 }

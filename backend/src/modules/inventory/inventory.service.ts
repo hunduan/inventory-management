@@ -27,15 +27,22 @@ export class InventoryService {
       }),
       this.prisma.inventory.count({ where }),
     ]);
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
-  async getAlerts(tenantId: string, threshold: number = 10) {
-    return this.prisma.inventory.findMany({
-      where: { tenantId, quantity: { lte: threshold } },
-      include: { product: true, warehouse: true },
-      orderBy: { quantity: 'asc' },
-    });
+  async getAlerts(tenantId: string, threshold: number = 10, page: number = 1, limit: number = 20) {
+    const where = { tenantId, quantity: { lte: threshold } };
+    const [items, total] = await Promise.all([
+      this.prisma.inventory.findMany({
+        where,
+        include: { product: true, warehouse: true },
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { quantity: 'asc' },
+      }),
+      this.prisma.inventory.count({ where }),
+    ]);
+    return { data: items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async getLogs(tenantId: string, query: { page?: number; limit?: number; productId?: string }) {
@@ -54,7 +61,50 @@ export class InventoryService {
       }),
       this.prisma.inventoryLog.count({ where }),
     ]);
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+
+    const purchaseIds: string[] = [];
+    const saleIds: string[] = [];
+    const transferIds: string[] = [];
+    const stocktakeIds: string[] = [];
+    for (const item of items) {
+      if (!item.refId || !item.refType) continue;
+      if (item.refType === 'PURCHASE_ORDER') purchaseIds.push(item.refId);
+      else if (item.refType === 'SALE_ORDER') saleIds.push(item.refId);
+      else if (item.refType === 'TRANSFER') transferIds.push(item.refId);
+      else if (item.refType === 'STOCKTAKE') stocktakeIds.push(item.refId);
+    }
+
+    const [purchases, sales, transfers, stocktakes] = await Promise.all([
+      purchaseIds.length ? this.prisma.purchaseOrder.findMany({ where: { id: { in: purchaseIds }, tenantId }, include: { supplier: true } }) : [],
+      saleIds.length ? this.prisma.saleOrder.findMany({ where: { id: { in: saleIds }, tenantId }, include: { customer: true } }) : [],
+      transferIds.length ? this.prisma.transfer.findMany({ where: { id: { in: transferIds }, tenantId }, include: { fromWarehouse: true, toWarehouse: true } }) : [],
+      stocktakeIds.length ? this.prisma.stocktake.findMany({ where: { id: { in: stocktakeIds }, tenantId }, include: { warehouse: true } }) : [],
+    ]);
+
+    const purchaseMap = new Map(purchases.map((p) => [p.id, p]));
+    const saleMap = new Map(sales.map((s) => [s.id, s]));
+    const transferMap = new Map(transfers.map((t) => [t.id, t]));
+    const stocktakeMap = new Map(stocktakes.map((s) => [s.id, s]));
+
+    const enrichedItems = items.map((item) => {
+      let refOrder: any = null;
+      if (item.refType === 'PURCHASE_ORDER' && item.refId) {
+        const order = purchaseMap.get(item.refId);
+        if (order) refOrder = { type: 'PURCHASE_ORDER', orderNo: order.orderNo, status: order.status, counterpartyName: order.supplier?.name || '-', totalAmount: order.totalAmount.toString() };
+      } else if (item.refType === 'SALE_ORDER' && item.refId) {
+        const order = saleMap.get(item.refId);
+        if (order) refOrder = { type: 'SALE_ORDER', orderNo: order.orderNo, status: order.status, counterpartyName: order.customer?.name || '-', totalAmount: order.totalAmount.toString() };
+      } else if (item.refType === 'TRANSFER' && item.refId) {
+        const order = transferMap.get(item.refId);
+        if (order) refOrder = { type: 'TRANSFER', orderNo: order.id.slice(0, 8), status: order.status, counterpartyName: `${order.fromWarehouse?.name || '-'} → ${order.toWarehouse?.name || '-'}`, totalAmount: '-' };
+      } else if (item.refType === 'STOCKTAKE' && item.refId) {
+        const order = stocktakeMap.get(item.refId);
+        if (order) refOrder = { type: 'STOCKTAKE', orderNo: order.id.slice(0, 8), status: order.status, counterpartyName: order.warehouse?.name || '-', totalAmount: '-' };
+      }
+      return { ...item, refOrder };
+    });
+
+    return { data: enrichedItems, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async getHistory(tenantId: string, query: { date: string; page?: number; limit?: number; warehouseId?: string; search?: string }) {
@@ -103,6 +153,6 @@ export class InventoryService {
       };
     }));
 
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 }

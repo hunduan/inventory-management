@@ -30,7 +30,7 @@ export class ProductsService {
       this.prisma.product.count({ where }),
     ]);
 
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findById(tenantId: string, id: string) {

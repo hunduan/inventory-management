@@ -1,0 +1,55 @@
+{
+  "pages": [
+    "pages/login/login",
+    "pages/home/home",
+    "pages/products/products",
+    "pages/purchase/purchase",
+    "pages/purchase-list/purchase-list",
+    "pages/sale/sale",
+    "pages/sale-list/sale-list",
+    "pages/inventory/inventory",
+    "pages/stocktake/stocktake",
+    "pages/transfers/transfers",
+    "pages/scan/scan",
+    "pages/voice/voice",
+    "pages/more/more"
+  ],
+  "window": {
+    "navigationBarTitleText": "进销存",
+    "navigationBarBackgroundColor": "#0f766e",
+    "navigationBarTextStyle": "white",
+    "backgroundColor": "#f5f5f4",
+    "backgroundTextStyle": "dark",
+    "enablePullDownRefresh": false
+  },
+  "tabBar": {
+    "color": "#999999",
+    "selectedColor": "#0f766e",
+    "backgroundColor": "#ffffff",
+    "borderStyle": "black",
+    "list": [
+      {
+        "pagePath": "pages/home/home",
+        "text": "首页"
+      },
+      {
+        "pagePath": "pages/purchase-list/purchase-list",
+        "text": "采购"
+      },
+      {
+        "pagePath": "pages/sale-list/sale-list",
+        "text": "销售"
+      },
+      {
+        "pagePath": "pages/inventory/inventory",
+        "text": "库存"
+      },
+      {
+        "pagePath": "pages/more/more",
+        "text": "更多"
+      }
+    ]
+  },
+  "sitemapLocation": "sitemap.json",
+  "lazyCodeLoading": "requiredComponents"
+}

@@ -97,34 +97,44 @@ export class ReportsService {
     const monthStart = new Date(now.getFullYear(), now.getMonth(), 1);
 
     const [
-      todayPurchaseOrders, todayPurchaseAmount,
-      todaySaleOrders, todaySaleAmount,
-      monthPurchaseAmount, monthSaleAmount,
-      lowStockItems, totalProducts,
+      todayPurchaseAmount,
+      todaySaleAmount,
+      monthPurchaseAmount,
+      monthSaleAmount,
+      lowStockItems,
+      totalProducts,
+      recentPurchases,
+      recentSales,
     ] = await Promise.all([
-      this.prisma.purchaseOrder.count({ where: { tenantId, createdAt: { gte: todayStart } } }),
       this.prisma.purchaseOrder.aggregate({ where: { tenantId, createdAt: { gte: todayStart }, status: 'RECEIVED' }, _sum: { totalAmount: true } }),
-      this.prisma.saleOrder.count({ where: { tenantId, createdAt: { gte: todayStart } } }),
       this.prisma.saleOrder.aggregate({ where: { tenantId, createdAt: { gte: todayStart }, status: 'DELIVERED' }, _sum: { totalAmount: true } }),
       this.prisma.purchaseOrder.aggregate({ where: { tenantId, createdAt: { gte: monthStart }, status: 'RECEIVED' }, _sum: { totalAmount: true } }),
       this.prisma.saleOrder.aggregate({ where: { tenantId, createdAt: { gte: monthStart }, status: 'DELIVERED' }, _sum: { totalAmount: true } }),
       this.prisma.inventory.count({ where: { tenantId, quantity: { lt: 10 } } }),
       this.prisma.product.count({ where: { tenantId, enabled: true } }),
+      this.prisma.purchaseOrder.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: { supplier: true },
+      }),
+      this.prisma.saleOrder.findMany({
+        where: { tenantId },
+        orderBy: { createdAt: 'desc' },
+        take: 5,
+        include: { customer: true },
+      }),
     ]);
 
     return {
-      today: {
-        purchaseOrders: todayPurchaseOrders,
-        purchaseAmount: Number(todayPurchaseAmount._sum.totalAmount || 0),
-        saleOrders: todaySaleOrders,
-        saleAmount: Number(todaySaleAmount._sum.totalAmount || 0),
-      },
-      month: {
-        purchaseAmount: Number(monthPurchaseAmount._sum.totalAmount || 0),
-        saleAmount: Number(monthSaleAmount._sum.totalAmount || 0),
-      },
-      lowStockCount: lowStockItems,
+      todaySales: Number(todaySaleAmount._sum.totalAmount || 0),
+      todayPurchases: Number(todayPurchaseAmount._sum.totalAmount || 0),
+      monthlySales: Number(monthSaleAmount._sum.totalAmount || 0),
+      monthlyPurchases: Number(monthPurchaseAmount._sum.totalAmount || 0),
       totalProducts,
+      lowStockCount: lowStockItems,
+      recentPurchases,
+      recentSales,
     };
   }
 

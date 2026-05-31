@@ -1,0 +1,13 @@
+{
+  "name": "mini",
+  "private": true,
+  "version": "1.0.0",
+  "description": "进销存管理系统 - 微信小程序",
+  "scripts": {},
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "miniprogram-api-typings": "^4.0.0"
+  }
+}

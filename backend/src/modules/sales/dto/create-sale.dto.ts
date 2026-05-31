@@ -8,10 +8,12 @@ class SaleItemDto {
   productId!: string;
 
   @ApiProperty()
+  @Type(() => Number)
   @IsNumber()
   quantity!: number;
 
   @ApiProperty()
+  @Type(() => Number)
   @IsNumber()
   unitPrice!: number;
 }

@@ -1,10 +1,11 @@
-import { Controller, Get, Post, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, Query, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { StocktakeService } from './stocktake.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 import { TenantId } from '../../common/decorators/tenant.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CreateStocktakeDto } from './dto/create-stocktake.dto';
+import { UpdateStocktakeItemDto, CompleteStocktakeDto } from './dto/update-stocktake.dto';
 
 @ApiTags('盘点')
 @ApiBearerAuth()
@@ -39,8 +40,14 @@ export class StocktakeController {
 
   @Post(':id/complete')
   @ApiOperation({ summary: '完成盘点' })
-  async complete(@TenantId() tenantId: string, @Param('id') id: string) {
-    return this.stocktakeService.complete(tenantId, id);
+  async complete(@TenantId() tenantId: string, @Param('id') id: string, @Body() dto?: CompleteStocktakeDto) {
+    return this.stocktakeService.complete(tenantId, id, dto?.items);
+  }
+
+  @Patch(':id/items/:itemId')
+  @ApiOperation({ summary: '更新盘点项实际数量' })
+  async updateItem(@TenantId() tenantId: string, @Param('id') id: string, @Param('itemId') itemId: string, @Body() dto: UpdateStocktakeItemDto) {
+    return this.stocktakeService.updateItem(tenantId, id, itemId, dto.actualQuantity);
   }
 
   @Post(':id/cancel')

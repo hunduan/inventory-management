@@ -17,7 +17,7 @@ export class StocktakeService {
       }),
       this.prisma.stocktake.count({ where }),
     ]);
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findById(tenantId: string, id: string) {
@@ -30,7 +30,6 @@ export class StocktakeService {
   }
 
   async create(tenantId: string, userId: string, data: { warehouseId: string; remark?: string }) {
-    // Create stocktake with book quantities from current inventory
     const inventoryItems = await this.prisma.inventory.findMany({
       where: { tenantId, warehouseId: data.warehouseId },
     });
@@ -68,22 +67,56 @@ export class StocktakeService {
     return this.findById(tenantId, id);
   }
 
-  async complete(tenantId: string, id: string) {
+  async updateItem(tenantId: string, stocktakeId: string, itemId: string, actualQuantity: number) {
+    const stocktake = await this.prisma.stocktake.findFirst({
+      where: { id: stocktakeId, tenantId, status: 'IN_PROGRESS' },
+    });
+    if (!stocktake) throw new NotFoundException('盘点单不存在或状态不正确');
+
+    const item = await this.prisma.stocktakeItem.findFirst({
+      where: { id: itemId, stocktakeId, tenantId },
+    });
+    if (!item) throw new NotFoundException('盘点项不存在');
+
+    const diff = actualQuantity - Number(item.bookQuantity);
+
+    await this.prisma.stocktakeItem.updateMany({
+      where: { id: itemId, stocktakeId },
+      data: { actualQuantity, diffQuantity: diff },
+    });
+
+    return this.findById(tenantId, stocktakeId);
+  }
+
+  async complete(tenantId: string, id: string, items?: Record<string, number>) {
     const stocktake = await this.prisma.stocktake.findFirst({
       where: { id, tenantId },
-      include: { items: true },
     });
     if (!stocktake) throw new NotFoundException('盘点单不存在');
     if (stocktake.status !== 'IN_PROGRESS') throw new BadRequestException('盘点单状态不正确');
 
     await this.prisma.$transaction(async (tx) => {
-      const statusResult = await tx.stocktake.updateMany({
-        where: { id, tenantId, status: 'IN_PROGRESS' },
-        data: { status: 'COMPLETED' },
-      });
-      if (statusResult.count === 0) throw new BadRequestException('盘点单状态已变化，请刷新后重试');
+      // Apply actual quantities inside transaction (if provided)
+      if (items && Object.keys(items).length > 0) {
+        for (const [itemId, actualQty] of Object.entries(items)) {
+          const existing = await tx.stocktakeItem.findFirst({
+            where: { id: itemId, stocktakeId: id, tenantId },
+          });
+          if (!existing) continue;
+          const diff = actualQty - Number(existing.bookQuantity);
+          await tx.stocktakeItem.updateMany({
+            where: { id: itemId, stocktakeId: id },
+            data: { actualQuantity: actualQty, diffQuantity: diff },
+          });
+        }
+      }
 
-      for (const item of stocktake.items) {
+      // Re-read items inside transaction for fresh data
+      const freshItems = await tx.stocktakeItem.findMany({
+        where: { stocktakeId: id, tenantId },
+      });
+
+      for (const item of freshItems) {
         const diff = Number(item.actualQuantity) - Number(item.bookQuantity);
         if (diff === 0) continue;
 
@@ -107,6 +140,13 @@ export class StocktakeService {
           });
         }
       }
+
+      // Update status to COMPLETED after all items processed
+      const statusResult = await tx.stocktake.updateMany({
+        where: { id, tenantId, status: 'IN_PROGRESS' },
+        data: { status: 'COMPLETED' },
+      });
+      if (statusResult.count === 0) throw new BadRequestException('盘点单状态已变化，请刷新后重试');
     });
 
     return this.findById(tenantId, id);

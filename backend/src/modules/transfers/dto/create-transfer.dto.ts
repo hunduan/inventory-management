@@ -8,6 +8,7 @@ class TransferItemDto {
   productId!: string;
 
   @ApiProperty()
+  @Type(() => Number)
   @IsNumber()
   quantity!: number;
 }

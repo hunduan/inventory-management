@@ -1,0 +1,27 @@
+<view class="login-page">
+  <view class="login-header">
+    <text class="login-logo">📦</text>
+    <text class="login-title">进销存管理系统</text>
+    <text class="login-subtitle">微信小程序版</text>
+  </view>
+
+  <view class="login-form">
+    <view class="input-group">
+      <text class="input-label">邮箱</text>
+      <input class="input-field" type="email" placeholder="请输入邮箱" value="{{email}}" bindinput="onEmailInput" />
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">密码</text>
+      <input class="input-field" type="password" placeholder="请输入密码" password="{{true}}" value="{{password}}" bindinput="onPasswordInput" />
+    </view>
+
+    <button class="btn-primary login-btn" loading="{{loading}}" disabled="{{loading}}" bindtap="onLogin">
+      登 录
+    </button>
+  </view>
+
+  <view class="login-footer">
+    <text class="login-footer-text">© 2026 进销存系统</text>
+  </view>
+</view>

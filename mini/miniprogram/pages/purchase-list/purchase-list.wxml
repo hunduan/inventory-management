@@ -1,0 +1,81 @@
+<view class="page">
+  <!-- 列表模式 -->
+  <view wx:if="{{!showDetail}}">
+    <view class="section-header">
+      <text class="section-header-title">采购单 ({{total}})</text>
+      <button class="btn-small btn-small-primary" bindtap="onCreate">+ 新建</button>
+    </view>
+
+    <view class="tab-row">
+      <view class="tab-item {{item.value === statusFilter ? 'tab-active' : ''}}" wx:for="{{statusTabs}}" wx:key="value" data-status="{{item.value}}" bindtap="onTabChange">
+        {{item.label}}
+      </view>
+    </view>
+
+    <view wx:if="{{loading && orders.length === 0}}" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="text-sm text-secondary mt-8">加载中...</text>
+    </view>
+
+    <view wx:elif="{{orders.length === 0}}" class="empty-state">
+      <text class="empty-state-icon">📋</text>
+      <text class="empty-state-text">暂无采购单</text>
+    </view>
+
+    <view wx:else>
+      <view class="card" wx:for="{{orders}}" wx:key="id" data-id="{{item.id}}" bindtap="onOrderTap">
+        <view class="flex-row justify-between">
+          <text class="text-bold">{{item.orderNo}}</text>
+          <status-tag status="{{item.status}}" size="small"></status-tag>
+        </view>
+        <view class="flex-row justify-between mt-4">
+          <text class="text-sm text-secondary">{{item.supplierName || '未指定供应商'}}</text>
+          <text class="text-base text-bold">¥{{item.totalAmount}}</text>
+        </view>
+        <text class="text-sm text-muted mt-4">{{item.createdAt}}</text>
+      </view>
+
+      <view wx:if="{{loading && orders.length > 0}}" class="loading-center">
+        <text>加载更多...</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 详情模式 -->
+  <view wx:if="{{showDetail}}">
+    <view wx:if="{{detailLoading}}" class="loading-container">
+      <view class="loading-spinner"></view>
+    </view>
+
+    <view wx:elif="{{selectedOrder}}">
+      <view class="card">
+        <view class="flex-row justify-between">
+          <text class="text-lg text-bold">{{selectedOrder.orderNo}}</text>
+          <status-tag status="{{selectedOrder.status}}"></status-tag>
+        </view>
+        <view class="divider"></view>
+        <view class="info-row"><text class="info-label">供应商</text><text class="info-value">{{selectedOrder.supplierName || '-'}}</text></view>
+        <view class="info-row"><text class="info-label">仓库</text><text class="info-value">{{selectedOrder.warehouseName || '-'}}</text></view>
+        <view class="info-row"><text class="info-label">总金额</text><text class="info-value text-primary">¥{{selectedOrder.totalAmount}}</text></view>
+        <view class="info-row"><text class="info-label">备注</text><text class="info-value">{{selectedOrder.remark || '-'}}</text></view>
+        <view class="info-row"><text class="info-label">创建时间</text><text class="info-value">{{selectedOrder.createdAt}}</text></view>
+      </view>
+
+      <text class="section-header-title mb-8">商品明细</text>
+      <view class="card" wx:for="{{selectedOrder.items}}" wx:key="id">
+        <view class="flex-row justify-between">
+          <text>{{item.productName || item.productId}}</text>
+          <text>¥{{item.unitCost}} x {{item.quantity}}</text>
+        </view>
+        <text class="text-sm text-secondary mt-4">小计: ¥{{item.subtotal}}</text>
+      </view>
+
+      <view class="flex-row gap-8 mt-16">
+        <button wx:if="{{selectedOrder.status === 'DRAFT'}}" class="btn-primary flex-1" data-id="{{selectedOrder.id}}" bindtap="onConfirm">确认</button>
+        <button wx:if="{{selectedOrder.status === 'CONFIRMED'}}" class="btn-primary flex-1" data-id="{{selectedOrder.id}}" bindtap="onReceive">入库</button>
+        <button wx:if="{{selectedOrder.status === 'DRAFT' || selectedOrder.status === 'CONFIRMED'}}" class="btn-secondary flex-1" data-id="{{selectedOrder.id}}" bindtap="onCancel">作废</button>
+        <button class="btn-secondary flex-1" bindtap="onCloseDetail">返回</button>
+      </view>
+    </view>
+  </view>
+</view>

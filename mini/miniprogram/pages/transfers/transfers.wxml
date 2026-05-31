@@ -1,0 +1,139 @@
+<view class="page">
+  <!-- 列表模式 -->
+  <view wx:if="{{!showForm && !showDetail}}">
+    <view class="section-header">
+      <text class="section-header-title">调拨单 ({{total}})</text>
+      <button class="btn-small btn-small-primary" bindtap="onNewTransfer">+ 新建</button>
+    </view>
+
+    <view wx:if="{{loading && orders.length === 0}}" class="loading-container">
+      <view class="loading-spinner"></view>
+      <text class="text-sm text-secondary mt-8">加载中...</text>
+    </view>
+
+    <view wx:elif="{{orders.length === 0}}" class="empty-state">
+      <text class="empty-state-icon">📋</text>
+      <text class="empty-state-text">暂无调拨单</text>
+    </view>
+
+    <view wx:else>
+      <view class="card" wx:for="{{orders}}" wx:key="id" data-id="{{item.id}}" bindtap="onOrderTap">
+        <view class="flex-row justify-between">
+          <text class="text-bold">{{item.orderNo}}</text>
+          <status-tag status="{{item.status}}" size="small"></status-tag>
+        </view>
+        <view class="flex-row justify-between mt-4">
+          <text class="text-sm text-secondary">{{item.sourceWarehouseName || '?'}} → {{item.destWarehouseName || '?'}}</text>
+          <text class="text-base text-bold">{{item.totalCount}} 项</text>
+        </view>
+        <text class="text-sm text-muted mt-4">{{item.createdAt}}</text>
+      </view>
+
+      <view wx:if="{{loading && orders.length > 0}}" class="loading-center">
+        <text>加载更多...</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- 新建调拨单 -->
+  <view wx:if="{{showForm}}">
+    <text class="page-title mb-16">新建调拨单</text>
+
+    <view class="input-group">
+      <text class="input-label">源仓库</text>
+      <picker class="picker-field" mode="selector" range="{{warehouses}}" range-key="name" value="{{sourceWarehouseIndex}}" bindchange="onSourceWarehouseChange">
+        <text wx:if="{{sourceWarehouseIndex >= 0}}">{{warehouses[sourceWarehouseIndex].name}}</text>
+        <text wx:else class="text-muted">请选择源仓库</text>
+      </picker>
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">目标仓库</text>
+      <picker class="picker-field" mode="selector" range="{{warehouses}}" range-key="name" value="{{destWarehouseIndex}}" bindchange="onDestWarehouseChange">
+        <text wx:if="{{destWarehouseIndex >= 0}}">{{warehouses[destWarehouseIndex].name}}</text>
+        <text wx:else class="text-muted">请选择目标仓库</text>
+      </picker>
+    </view>
+
+    <view class="section-header">
+      <text class="section-header-title">商品明细</text>
+      <button class="btn-small btn-small-primary" bindtap="onAddProduct">+ 添加</button>
+    </view>
+
+    <view wx:if="{{formItems.length === 0}}" class="empty-state" style="padding: 20px;">
+      <text class="text-muted">请点击"添加"选择商品</text>
+    </view>
+
+    <view wx:for="{{formItems}}" wx:key="productId" class="card">
+      <view class="flex-row justify-between">
+        <text class="text-bold">{{item.productName}}</text>
+        <text class="text-danger" data-index="{{index}}" bindtap="onRemoveItem">删除</text>
+      </view>
+      <view class="input-group mt-8">
+        <text class="input-label">数量</text>
+        <input class="input-field" type="digit" value="{{item.quantity}}" data-index="{{index}}" bindinput="onFormQuantityInput" />
+      </view>
+    </view>
+
+    <view class="input-group">
+      <text class="input-label">备注</text>
+      <input class="input-field" placeholder="选填" value="{{remark}}" bindinput="onRemarkInput" />
+    </view>
+
+    <button class="btn-primary mt-16" loading="{{submitting}}" disabled="{{submitting || formItems.length === 0}}" bindtap="onSubmitTransfer">创建调拨单</button>
+    <button class="btn-secondary mt-8" bindtap="onCancelForm">取消</button>
+
+    <!-- 商品搜索弹窗 -->
+    <view wx:if="{{showProductSearch}}" class="modal-overlay" bindtap="onAddProduct">
+      <view class="modal-content" catchtap>
+        <text class="modal-title">选择商品</text>
+        <input class="input-field" placeholder="搜索商品名称" value="{{productSearch}}" bindinput="onProductSearchInput" />
+        <view class="divider"></view>
+        <scroll-view scroll-y style="max-height: 300px;">
+          <view wx:if="{{searchResults.length === 0}}" class="text-center text-muted p-12">输入商品名称搜索</view>
+          <view wx:for="{{searchResults}}" wx:key="id" class="list-item" data-product="{{item}}" bindtap="onSelectProduct">
+            <view><text class="text-bold">{{item.name}}</text></view>
+          </view>
+        </scroll-view>
+        <button class="btn-secondary mt-8" bindtap="onAddProduct">取消</button>
+      </view>
+    </view>
+  </view>
+
+  <!-- 详情模式 -->
+  <view wx:if="{{showDetail}}">
+    <view wx:if="{{detailLoading}}" class="loading-container">
+      <view class="loading-spinner"></view>
+    </view>
+
+    <view wx:elif="{{selectedOrder}}">
+      <view class="card">
+        <view class="flex-row justify-between">
+          <text class="text-lg text-bold">{{selectedOrder.orderNo}}</text>
+          <status-tag status="{{selectedOrder.status}}"></status-tag>
+        </view>
+        <view class="divider"></view>
+        <view class="info-row"><text class="info-label">源仓库</text><text class="info-value">{{selectedOrder.sourceWarehouseName || '-'}}</text></view>
+        <view class="info-row"><text class="info-label">目标仓库</text><text class="info-value">{{selectedOrder.destWarehouseName || '-'}}</text></view>
+        <view class="info-row"><text class="info-label">商品数</text><text class="info-value">{{selectedOrder.items?.length || 0}} 项</text></view>
+        <view class="info-row"><text class="info-label">备注</text><text class="info-value">{{selectedOrder.remark || '-'}}</text></view>
+        <view class="info-row"><text class="info-label">创建时间</text><text class="info-value">{{selectedOrder.createdAt}}</text></view>
+      </view>
+
+      <text class="section-header-title mb-8">商品明细</text>
+      <view class="card" wx:for="{{selectedOrder.items}}" wx:key="id">
+        <view class="flex-row justify-between">
+          <text>{{item.productName || item.productId}}</text>
+          <text>x {{item.quantity}}</text>
+        </view>
+      </view>
+
+      <view class="flex-row gap-8 mt-16">
+        <button wx:if="{{selectedOrder.status === 'DRAFT'}}" class="btn-primary flex-1" data-id="{{selectedOrder.id}}" bindtap="onConfirm">确认</button>
+        <button wx:if="{{selectedOrder.status === 'CONFIRMED'}}" class="btn-primary flex-1" data-id="{{selectedOrder.id}}" bindtap="onComplete">完成调拨</button>
+        <button wx:if="{{selectedOrder.status === 'DRAFT' || selectedOrder.status === 'CONFIRMED'}}" class="btn-secondary flex-1" data-id="{{selectedOrder.id}}" bindtap="onCancel">作废</button>
+        <button class="btn-secondary flex-1" bindtap="onCloseDetail">返回</button>
+      </view>
+    </view>
+  </view>
+</view>

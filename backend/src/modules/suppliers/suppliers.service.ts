@@ -6,22 +6,49 @@ export class SuppliersService {
   constructor(private prisma: PrismaService) {}
 
   async findAll(tenantId: string, query: { search?: string; page?: number; limit?: number }) {
-    const where: any = { tenantId };
-    if (query.search) {
-      where.OR = [
-        { name: { contains: query.search } },
-        { phone: { contains: query.search } },
-      ];
-    }
     const page = Number(query.page) || 1;
     const limit = Number(query.limit) || 20;
     const skip = (page - 1) * limit;
+    const search = query.search || '';
 
-    const [items, total] = await Promise.all([
-      this.prisma.supplier.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
-      this.prisma.supplier.count({ where }),
-    ]);
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    const where: any = { tenantId, enabled: true };
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { phone: { contains: search } },
+      ];
+    }
+    const total = await this.prisma.supplier.count({ where });
+
+    // 带往来金额的列表，按总金额降序
+    const items = await this.prisma.$queryRawUnsafe<any[]>(
+      `SELECT s.id, s.name, s.tenant_id, s.phone, s.contact, s.address, s.enabled, s.created_at, s.updated_at,
+              COALESCE(SUM(po.total_amount), 0) as total_amount
+       FROM suppliers s
+       LEFT JOIN purchase_orders po ON po.supplier_id = s.id AND po.status != 'CANCELLED'
+       WHERE s.tenant_id = $1 AND s.enabled = true
+         AND ($2 = '' OR s.name ILIKE $2 OR s.phone ILIKE $2)
+       GROUP BY s.id
+       ORDER BY total_amount DESC
+       LIMIT $3 OFFSET $4`,
+      tenantId, `%${search}%`, limit, skip,
+    );
+
+    return {
+      data: items.map((item: any) => ({
+        id: item.id,
+        tenantId: item.tenant_id,
+        name: item.name,
+        phone: item.phone,
+        contact: item.contact,
+        address: item.address,
+        enabled: item.enabled,
+        createdAt: item.created_at,
+        updatedAt: item.updated_at,
+        totalAmount: Number(item.total_amount),
+      })),
+      total, page, limit, totalPages: Math.ceil(total / limit),
+    };
   }
 
   async findById(tenantId: string, id: string) {

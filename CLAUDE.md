@@ -10,11 +10,26 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 | Layer | Tech |
 |-------|------|
-| Frontend | Taro 4 + React 18 + TypeScript + Less (Tailwind only for spacing/utility classes) |
 | Backend | NestJS 11 + TypeScript |
 | ORM | Prisma 7 + PostgreSQL |
 | Auth | JWT (passport-jwt) |
-| Frontend State | Zustand 4 |
+| H5 Web | Vite 8 + React 19 + Ant Design 6 + Zustand 5 + React Router 7 |
+| Mini Program | WeChat native (WXML/WXSS/TS) — Taro 4 (旧, client/) |
+
+## Ant Design 6 Icon Rules
+
+Ant Design 6 (`@ant-design/icons` v6) 移除了部分旧版图标，使用前务必确认存在性：
+
+| 已知已移除 | 替代方案 |
+|-----------|---------|
+| `BuildingOutlined` | `HomeOutlined` 或 `ShopOutlined` |
+| `ApiOutlined` | `CloudServerOutlined` |
+| `ContainerOutlined` | `FolderOutlined` |
+
+**预防措施**：
+- 使用新图标前，先 `grep` 确认 `node_modules/@ant-design/icons/es/index.js` 中存在该导出
+- 如果 build 报 `MISSING_EXPORT` 错误，说明图标已被移除，换一个同类图标
+- 不确定时优先用基础图标（`HomeOutlined`、`ShopOutlined`、`TeamOutlined`、`SettingOutlined`），这些长期稳定
 
 ## Commands
 
@@ -157,6 +172,19 @@ export const purchasesApi = {
 - Build output: `dist/weapp/` — open `client/` in WeChat DevTools
 - Mini pages: login, index (home), scan, voice, photo, purchase, sale, orders (list+detail), products, inventory
 - API_BASE_URL defined in `config/index.ts` via `defineConstants` — update for production HTTPS domain
+
+## Taro Mini Program CSS Constraints
+
+These constraints apply to WeChat mini program builds (`TARO_ENV=weapp`), NOT H5 builds:
+
+| What NOT to use | Why | Alternative |
+|----------------|-----|-------------|
+| `display: 'flex'` in inline style | Compiled to empty string by Taro | Use `className="flex-row"` (defined in `app.less`) or omit `display`, only use `flexDirection: 'row'` |
+| `paddingHorizontal`, `paddingVertical` | Not in Taro CSSProperties type | Use individual `paddingLeft/Right/Top/Bottom` |
+| `shadowColor`, `shadowOffset`, `shadowOpacity`, `shadowRadius` | Not in Taro CSSProperties type | Use `boxShadow: '0 2px 8px rgba(0,0,0,0.06)'` |
+| `gap` in flex layouts | May not render in mini program | Use `marginLeft`/`marginTop` on child elements instead |
+
+General rule: **Prefer CSS classes over inline styles for layout properties.** Define reusable classes in `app.less`. See `.flex-row`, `.flex-col`, `.flex-1` utility classes already defined.
 
 ## Database
 

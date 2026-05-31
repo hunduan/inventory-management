@@ -1,0 +1,52 @@
+<view class="page">
+  <text class="page-title mb-16">更多功能</text>
+
+  <view class="more-grid">
+    <view class="more-item" bindtap="onNavigate" data-url="/pages/stocktake/stocktake">
+      <text class="more-item-icon">📋</text>
+      <text class="more-item-text">盘点</text>
+    </view>
+    <view class="more-item" bindtap="onNavigate" data-url="/pages/transfers/transfers">
+      <text class="more-item-icon">🚚</text>
+      <text class="more-item-text">调拨</text>
+    </view>
+    <view class="more-item" bindtap="onNavigate" data-url="/pages/products/products">
+      <text class="more-item-icon">📦</text>
+      <text class="more-item-text">商品</text>
+    </view>
+    <view class="more-item" bindtap="onNavigate" data-url="/pages/scan/scan">
+      <text class="more-item-icon">📷</text>
+      <text class="more-item-text">扫码</text>
+    </view>
+    <view class="more-item" bindtap="onNavigate" data-url="/pages/voice/voice">
+      <text class="more-item-icon">🎤</text>
+      <text class="more-item-text">语音</text>
+    </view>
+  </view>
+
+  <text class="section-header-title mb-12">设置</text>
+
+  <view class="card">
+    <view class="list-item" bindtap="onViewProfile">
+      <view class="flex-row justify-between">
+        <text>个人信息</text>
+        <text class="text-sm text-secondary">{{user?.name || '-'}}</text>
+      </view>
+    </view>
+    <view class="divider"></view>
+    <view class="list-item" bindtap="onViewApiInfo">
+      <view class="flex-row justify-between">
+        <text>服务器地址</text>
+        <text class="text-sm text-secondary">{{apiBase}}</text>
+      </view>
+    </view>
+  </view>
+
+  <view class="mt-24">
+    <button class="btn-secondary" bindtap="onLogout">退出登录</button>
+  </view>
+
+  <view class="text-center text-muted text-sm mt-16">
+    <text>进销存管理系统 v1.0.0</text>
+  </view>
+</view>

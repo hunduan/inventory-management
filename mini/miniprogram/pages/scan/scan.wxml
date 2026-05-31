@@ -1,0 +1,24 @@
+<view class="page">
+  <view class="scan-container">
+    <view class="scan-icon">📷</view>
+    <text class="text-lg text-bold mb-8">扫码查商品</text>
+    <text class="text-sm text-secondary mb-24">扫描商品条形码，快速查询库存信息</text>
+
+    <button class="btn-primary mb-12" bindtap="onScan">开始扫码</button>
+
+    <view wx:if="{{result}}" class="card" style="width:100%;">
+      <view class="flex-row justify-between">
+        <text class="text-bold">{{result.name}}</text>
+      </view>
+      <view class="info-row mt-8"><text class="info-label">条形码</text><text class="info-value">{{result.barcode}}</text></view>
+      <view class="info-row"><text class="info-label">SKU</text><text class="info-value">{{result.sku || '-'}}</text></view>
+      <view class="info-row"><text class="info-label">售价</text><text class="info-value">¥{{result.salePrice}}</text></view>
+    </view>
+
+    <view wx:if="{{errorMsg}}" class="card" style="background:#fef2f2;border-color:#fecaca;width:100%;margin-top:12px;">
+      <text class="text-danger">{{errorMsg}}</text>
+    </view>
+
+    <button wx:if="{{result}}" class="btn-secondary mt-12" bindtap="onScanAgain">继续扫码</button>
+  </view>
+</view>

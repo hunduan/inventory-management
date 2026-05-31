@@ -1,0 +1,66 @@
+<view class="page">
+  <view class="search-bar">
+    <text class="text-secondary">🔍</text>
+    <input class="search-input" placeholder="搜索商品名称、条码、SKU" value="{{search}}" bindinput="onSearchInput" bindconfirm="onSearch" />
+  </view>
+
+  <view wx:if="{{loading && products.length === 0}}" class="loading-container">
+    <view class="loading-spinner"></view>
+    <text class="text-sm text-secondary mt-8">加载中...</text>
+  </view>
+
+  <view wx:elif="{{products.length === 0}}" class="empty-state">
+    <text class="empty-state-icon">📦</text>
+    <text class="empty-state-text">{{search ? '未找到匹配商品' : '暂无商品'}}</text>
+  </view>
+
+  <view wx:else>
+    <view class="card" wx:for="{{products}}" wx:key="id" data-product="{{item}}" bindtap="onProductTap">
+      <view class="flex-row justify-between">
+        <text class="text-bold text-base">{{item.name}}</text>
+        <text class="text-lg text-bold text-primary">¥{{item.salePrice}}</text>
+      </view>
+      <view class="flex-row mt-4">
+        <text wx:if="{{item.barcode}}" class="text-sm text-secondary">条码: {{item.barcode}}</text>
+        <text wx:if="{{item.sku}}" class="text-sm text-secondary ml-12">SKU: {{item.sku}}</text>
+      </view>
+      <view class="flex-row mt-4">
+        <text class="text-sm text-secondary">单位: {{item.unit}}</text>
+        <text wx:if="{{item.costPrice > 0}}" class="text-sm text-secondary ml-12">成本: ¥{{item.costPrice}}</text>
+      </view>
+    </view>
+
+    <view wx:if="{{loading && products.length > 0}}" class="loading-center">
+      <text>加载更多...</text>
+    </view>
+  </view>
+
+  <view wx:if="{{showDetail && selectedProduct}}" class="modal-overlay" bindtap="onCloseDetail">
+    <view class="modal-content" catchtap>
+      <text class="modal-title">{{selectedProduct.name}}</text>
+      <view class="divider"></view>
+      <view class="info-row">
+        <text class="info-label">条码</text>
+        <text class="info-value">{{selectedProduct.barcode || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">SKU</text>
+        <text class="info-value">{{selectedProduct.sku || '-'}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">单位</text>
+        <text class="info-value">{{selectedProduct.unit}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">售价</text>
+        <text class="info-value text-primary">¥{{selectedProduct.salePrice}}</text>
+      </view>
+      <view class="info-row">
+        <text class="info-label">成本价</text>
+        <text class="info-value">¥{{selectedProduct.costPrice}}</text>
+      </view>
+      <view class="divider"></view>
+      <button class="btn-primary mt-8" bindtap="onCloseDetail">关闭</button>
+    </view>
+  </view>
+</view>

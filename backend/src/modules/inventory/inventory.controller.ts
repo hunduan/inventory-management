@@ -20,8 +20,20 @@ export class InventoryController {
   @Get('alerts')
   @ApiOperation({ summary: '库存预警' })
   @ApiQuery({ name: 'threshold', required: false, type: Number })
-  async getAlerts(@TenantId() tenantId: string, @Query('threshold') threshold?: string) {
-    return this.inventoryService.getAlerts(tenantId, threshold ? parseInt(threshold, 10) : 10);
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  async getAlerts(
+    @TenantId() tenantId: string,
+    @Query('threshold') threshold?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.inventoryService.getAlerts(
+      tenantId,
+      threshold ? parseInt(threshold, 10) : 10,
+      page ? parseInt(page, 10) : 1,
+      limit ? parseInt(limit, 10) : 20,
+    );
   }
 
   @Get('logs')

@@ -1,0 +1,64 @@
+/* 语音录入页 */
+
+.voice-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 50vh;
+  padding: 40px 20px;
+}
+
+.voice-btn {
+  width: 100px;
+  height: 100px;
+  border-radius: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 40px;
+  margin-bottom: 16px;
+  border: none;
+}
+
+.voice-btn-idle {
+  background: #f5f5f4;
+  color: #78716c;
+}
+
+.voice-btn-recording {
+  background: #fef2f2;
+  color: #dc2626;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.05); }
+}
+
+.voice-wave {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  height: 40px;
+  margin-bottom: 16px;
+}
+
+.voice-wave-bar {
+  width: 4px;
+  background: #0f766e;
+  border-radius: 2px;
+  animation: wave 0.5s infinite alternate;
+}
+
+.voice-wave-bar:nth-child(1) { height: 12px; animation-delay: 0s; }
+.voice-wave-bar:nth-child(2) { height: 24px; animation-delay: 0.1s; }
+.voice-wave-bar:nth-child(3) { height: 36px; animation-delay: 0.2s; }
+.voice-wave-bar:nth-child(4) { height: 24px; animation-delay: 0.3s; }
+.voice-wave-bar:nth-child(5) { height: 12px; animation-delay: 0.4s; }
+
+@keyframes wave {
+  from { height: 8px; }
+  to { height: 36px; }
+}

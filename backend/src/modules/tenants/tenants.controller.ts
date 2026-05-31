@@ -2,6 +2,7 @@ import { Controller, Get, Post, Patch, Delete, Body, Param, Query, UseGuards } f
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { TenantsService } from './tenants.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { SuperAdminGuard } from '../../common/guards/super-admin.guard';
 import { TenantId } from '../../common/decorators/tenant.decorator';
 
 @ApiTags('租户')
@@ -24,19 +25,29 @@ export class TenantsController {
   }
 
   @Get('admin/all')
-  @ApiOperation({ summary: '管理员获取所有租户' })
+  @UseGuards(SuperAdminGuard)
+  @ApiOperation({ summary: '超级管理员获取所有租户' })
   async findAll(@Query() query: { search?: string; page?: number; limit?: number }) {
     return this.tenantsService.findAll(query);
   }
 
   @Post('admin')
-  @ApiOperation({ summary: '管理员创建租户' })
+  @UseGuards(SuperAdminGuard)
+  @ApiOperation({ summary: '超级管理员创建租户' })
   async create(@Body() data: { name: string; slug: string; logo?: string }) {
     return this.tenantsService.create(data);
   }
 
+  @Patch('admin/:id')
+  @UseGuards(SuperAdminGuard)
+  @ApiOperation({ summary: '超级管理员更新租户（启用/禁用/改名）' })
+  async updateAdmin(@Param('id') id: string, @Body() data: { name?: string; enabled?: boolean }) {
+    return this.tenantsService.update(id, data);
+  }
+
   @Delete('admin/:id')
-  @ApiOperation({ summary: '管理员禁用租户' })
+  @UseGuards(SuperAdminGuard)
+  @ApiOperation({ summary: '超级管理员禁用租户' })
   async remove(@Param('id') id: string) {
     return this.tenantsService.remove(id);
   }

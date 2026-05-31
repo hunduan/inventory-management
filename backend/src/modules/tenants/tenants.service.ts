@@ -21,7 +21,7 @@ export class TenantsService {
       this.prisma.tenant.findMany({ where, skip, take: limit, orderBy: { createdAt: 'desc' } }),
       this.prisma.tenant.count({ where }),
     ]);
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findById(id: string) {
@@ -36,7 +36,7 @@ export class TenantsService {
     return this.prisma.tenant.create({ data });
   }
 
-  async update(id: string, data: { name?: string; logo?: string }) {
+  async update(id: string, data: { name?: string; logo?: string; enabled?: boolean }) {
     const result = await this.prisma.tenant.updateMany({ where: { id }, data });
     if (result.count === 0) throw new NotFoundException('租户不存在');
     return this.findById(id);

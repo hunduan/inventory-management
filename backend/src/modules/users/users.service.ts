@@ -21,17 +21,17 @@ export class UsersService {
     const [items, total] = await Promise.all([
       this.prisma.user.findMany({
         where, skip, take: limit, orderBy: { createdAt: 'desc' },
-        select: { id: true, name: true, email: true, phone: true, roleId: true, enabled: true, createdAt: true, updatedAt: true },
+        select: { id: true, name: true, email: true, phone: true, roleId: true, enabled: true, createdAt: true, updatedAt: true, role: true },
       }),
       this.prisma.user.count({ where }),
     ]);
-    return { items, total, page, limit, totalPages: Math.ceil(total / limit) };
+    return { data: items, total, page, limit, totalPages: Math.ceil(total / limit) };
   }
 
   async findById(tenantId: string, id: string) {
     const user = await this.prisma.user.findFirst({
       where: { id, tenantId },
-      select: { id: true, name: true, email: true, phone: true, roleId: true, enabled: true, createdAt: true, updatedAt: true },
+      select: { id: true, name: true, email: true, phone: true, roleId: true, enabled: true, createdAt: true, updatedAt: true, role: true },
     });
     if (!user) throw new NotFoundException('用户不存在');
     return user;

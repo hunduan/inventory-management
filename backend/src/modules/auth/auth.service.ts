@@ -30,7 +30,12 @@ export class AuthService {
 
     return {
       accessToken: this.jwtService.sign(payload),
-      user: { id: user.id, name: user.name, email: user.email, tenantId: user.tenantId, tenantName: user.tenant.name, role: user.role?.name || 'user' },
+      user: {
+        id: user.id, name: user.name, email: user.email,
+        tenantId: user.tenantId, tenantName: user.tenant.name,
+        role: user.role?.name || 'user',
+        permissions: user.role?.permissions as string[] || [],
+      },
     };
   }
 
