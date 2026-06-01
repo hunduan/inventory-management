@@ -1,0 +1,32 @@
+<view class="page page-enter">
+  <view class="section-header">
+    <text class="section-title">供应商管理</text>
+    <text class="text-sm text-secondary">{{count}} 人</text>
+  </view>
+
+  <view class="search-bar">
+    <text class="text-secondary">🔍</text>
+    <input class="search-input" placeholder="搜索供应商名称" bindinput="onSearchInput" />
+  </view>
+
+  <view wx:if="{{loading && suppliers.length === 0}}" class="loading-center">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:elif="{{suppliers.length === 0}}" class="empty-state">
+    <text class="empty-icon">🏭</text>
+    <text class="empty-text">暂无供应商</text>
+  </view>
+
+  <view wx:else>
+    <view class="card" wx:for="{{suppliers}}" wx:key="id">
+      <view class="flex-row justify-between">
+        <view>
+          <text class="text-bold">{{item.name}}</text>
+          <text wx:if="{{item.phone}}" class="text-sm text-secondary ml-8">{{item.phone}}</text>
+        </view>
+      </view>
+      <text wx:if="{{item.email}}" class="text-sm text-muted mt-4">{{item.email}}</text>
+    </view>
+  </view>
+</view>

@@ -1,6 +1,6 @@
 {
-  "navigationBarTitleText": "商品查询",
+  "navigationBarTitleText": "商品管理",
   "enablePullDownRefresh": true,
-  "onReachBottomDistance": 100,
-  "usingComponents": {}
+  "backgroundColor": "#f5f5f4",
+  "onReachBottomDistance": 100
 }

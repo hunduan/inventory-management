@@ -3,104 +3,96 @@ import { api } from '../../services/request';
 
 Page({
   data: {
-    orders: [] as any[],
-    page: 1,
-    limit: 20,
-    total: 0,
-    loading: false,
-    hasMore: true,
-
-    showForm: false,
-    warehouses: [] as any[],
-    formWarehouseIndex: -1,
-    formItems: [] as any[],
+    list: [] as any[],
+    loading: true,
+    showCreate: false,
+    warehouses: [],
+    warehouseIndex: -1,
+    items: [] as any[],
+    remark: '',
     submitting: false,
-
-    showDetail: false,
-    selectedOrder: null as any,
-    detailLoading: false,
+    productSearch: '',
+    searchResults: [],
+    showProductSearch: false,
   },
 
-  onLoad() {
-    this.loadOrders();
+  async onLoad() {
+    await Promise.all([this.loadList(), this.loadWarehouses()]);
   },
 
-  onShow() {
-    if (!this.data.showDetail && !this.data.showForm) {
-      this.setData({ page: 1, orders: [], hasMore: true });
-      this.loadOrders();
-    }
-  },
+  onShow() { if (!this.data.showCreate) this.loadList(); },
 
-  onPullDownRefresh() {
-    this.setData({ page: 1, orders: [], hasMore: true });
-    this.loadOrders().then(() => wx.stopPullDownRefresh());
-  },
-
-  onReachBottom() {
-    if (this.data.hasMore && !this.data.loading) {
-      this.setData({ page: this.data.page + 1 });
-      this.loadOrders();
-    }
-  },
-
-  async loadOrders() {
-    if (this.data.loading) return;
+  async loadList() {
     this.setData({ loading: true });
     try {
-      const res = await stocktakeApi.list({ page: this.data.page, limit: this.data.limit });
-      this.setData({
-        orders: this.data.page === 1 ? res.data : [...this.data.orders, ...res.data],
-        total: res.total,
-        hasMore: this.data.page * this.data.limit < res.total,
-      });
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
-    } finally {
-      this.setData({ loading: false });
-    }
+      const res = await stocktakeApi.list();
+      this.setData({ list: res.data || [] });
+    } catch { wx.showToast({ title: '加载失败', icon: 'none' }); }
+    finally { this.setData({ loading: false }); }
   },
 
   async loadWarehouses() {
     try {
-      const r = await api.get<{ data: any[] }>('/warehouses?limit=100');
-      this.setData({ warehouses: r.data || [] });
-    } catch { /* ignore */ }
+      const res = await api.get<{ data: any[] }>('/warehouses?limit=100');
+      this.setData({ warehouses: res.data || [] });
+    } catch {}
   },
 
-  async onNewStocktake() {
-    await this.loadWarehouses();
-    this.setData({ showForm: true, formWarehouseIndex: -1, formItems: [] });
+  onShowCreate() {
+    this.setData({ showCreate: true, warehouseIndex: -1, items: [], remark: '' });
+  },
+  onHideCreate() { this.setData({ showCreate: false }); },
+  onWarehouseChange(e: WechatMiniprogram.PickerChange) { this.setData({ warehouseIndex: Number(e.detail.value) }); },
+  onRemarkInput(e: WechatMiniprogram.Input) { this.setData({ remark: e.detail.value }); },
+
+  onAddProduct() { this.setData({ showProductSearch: true, productSearch: '', searchResults: [] }); },
+  onCloseSearch() { this.setData({ showProductSearch: false }); },
+
+  async onProductSearchInput(e: WechatMiniprogram.Input) {
+    const q = e.detail.value;
+    this.setData({ productSearch: q });
+    if (!q.trim()) { this.setData({ searchResults: [] }); return; }
+    try {
+      const res = await api.get<{ data: any[] }>(`/products?search=${q}&limit=10`);
+      this.setData({ searchResults: res.data || [] });
+    } catch { this.setData({ searchResults: [] }); }
   },
 
-  onCancelForm() {
-    this.setData({ showForm: false, formWarehouseIndex: -1, formItems: [] });
+  onSelectProduct(e: WechatMiniprogram.TouchEvent) {
+    const product = e.currentTarget.dataset.product;
+    const items = [...this.data.items];
+    if (items.find(i => i.productId === product.id)) {
+      wx.showToast({ title: '商品已存在', icon: 'none' }); return;
+    }
+    items.push({
+      productId: product.id,
+      productName: product.name,
+      bookQuantity: product.stock || 0,
+    });
+    this.setData({ items, showProductSearch: false });
   },
 
-  onFormWarehouseChange(e: WechatMiniprogram.PickerChange) {
-    this.setData({ formWarehouseIndex: Number(e.detail.value) });
-  },
-
-  onActualQuantityInput(e: WechatMiniprogram.Input) {
+  onRemoveItem(e: WechatMiniprogram.TouchEvent) {
     const idx = Number(e.currentTarget.dataset.index);
-    const qty = parseFloat(e.detail.value) || 0;
-    const formItems = [...this.data.formItems];
-    formItems[idx] = { ...formItems[idx], actualQuantity: qty, difference: qty - formItems[idx].bookQuantity };
-    this.setData({ formItems });
+    const items = [...this.data.items];
+    items.splice(idx, 1);
+    this.setData({ items });
   },
 
-  async onSubmitStocktake() {
-    const { formWarehouseIndex, warehouses, formItems } = this.data;
-    if (formWarehouseIndex < 0) { wx.showToast({ title: '请选择仓库', icon: 'none' }); return; }
+  async onSubmit() {
+    if (this.data.warehouseIndex < 0) { wx.showToast({ title: '请选择仓库', icon: 'none' }); return; }
+    if (this.data.items.length === 0) { wx.showToast({ title: '请添加商品', icon: 'none' }); return; }
     this.setData({ submitting: true });
     try {
+      const { warehouses, warehouseIndex, remark, items } = this.data;
       await stocktakeApi.create({
-        warehouseId: warehouses[formWarehouseIndex].id,
-        items: formItems.map(i => ({ productId: i.productId, bookQuantity: i.bookQuantity, actualQuantity: i.actualQuantity })),
+        warehouseId: warehouses[warehouseIndex].id,
+        remark,
+        items: items.map(i => ({ productId: i.productId, bookQuantity: i.bookQuantity })),
       });
       wx.showToast({ title: '创建成功', icon: 'success' });
-      this.setData({ showForm: false, showDetail: false, page: 1, orders: [], hasMore: true });
-      this.loadOrders();
+      this.setData({ showCreate: false });
+      this.loadList();
     } catch (err: any) {
       wx.showToast({ title: err.message || '创建失败', icon: 'none' });
     } finally {
@@ -108,57 +100,8 @@ Page({
     }
   },
 
-  async onOrderTap(e: WechatMiniprogram.TouchEvent) {
+  onItemTap(e: WechatMiniprogram.TouchEvent) {
     const id = e.currentTarget.dataset.id;
-    this.setData({ detailLoading: true, showDetail: true });
-    try {
-      const order = await stocktakeApi.getById(id);
-      this.setData({ selectedOrder: order });
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
-      this.setData({ showDetail: false });
-    } finally {
-      this.setData({ detailLoading: false });
-    }
-  },
-
-  onCloseDetail() {
-    this.setData({ showDetail: false, selectedOrder: null });
-  },
-
-  async onStartStocktake(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id;
-    try {
-      await stocktakeApi.start(id);
-      wx.showToast({ title: '已开始盘点', icon: 'success' });
-      this.loadOrders();
-      this.onOrderTap({ currentTarget: { dataset: { id } } } as any);
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    }
-  },
-
-  async onCompleteStocktake(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id;
-    try {
-      await stocktakeApi.complete(id);
-      wx.showToast({ title: '盘点完成', icon: 'success' });
-      this.loadOrders();
-      this.onOrderTap({ currentTarget: { dataset: { id } } } as any);
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    }
-  },
-
-  async onCancelStocktake(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id;
-    try {
-      await stocktakeApi.cancel(id);
-      wx.showToast({ title: '已作废', icon: 'success' });
-      this.loadOrders();
-      this.onCloseDetail();
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    }
+    wx.navigateTo({ url: `/pages/order-detail/order-detail?id=${id}&type=STOCKTAKE` });
   },
 });

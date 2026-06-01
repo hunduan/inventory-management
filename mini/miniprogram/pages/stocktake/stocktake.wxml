@@ -1,122 +1,73 @@
-<view class="page">
-  <!-- 列表模式 -->
-  <view wx:if="{{!showForm && !showDetail}}">
-    <view class="section-header">
-      <text class="section-header-title">盘点单 ({{total}})</text>
-      <button class="btn-small btn-small-primary" bindtap="onNewStocktake">+ 新建</button>
-    </view>
+<view class="page page-enter">
+  <view class="section-header">
+    <text class="section-title">盘点管理</text>
+    <button class="btn btn-primary btn-sm" bindtap="onShowCreate">+ 新建</button>
+  </view>
 
-    <view wx:if="{{loading && orders.length === 0}}" class="loading-container">
-      <view class="loading-spinner"></view>
-      <text class="text-sm text-secondary mt-8">加载中...</text>
-    </view>
+  <view wx:if="{{loading}}" class="loading-center"><view class="loading-spinner"></view></view>
 
-    <view wx:elif="{{orders.length === 0}}" class="empty-state">
-      <text class="empty-state-icon">📋</text>
-      <text class="empty-state-text">暂无盘点单</text>
-    </view>
+  <view wx:elif="{{list.length === 0}}" class="empty-state">
+    <text class="empty-icon">🔍</text>
+    <text class="empty-text">暂无盘点记录</text>
+  </view>
 
-    <view wx:else>
-      <view class="card" wx:for="{{orders}}" wx:key="id" data-id="{{item.id}}" bindtap="onOrderTap">
-        <view class="flex-row justify-between">
-          <text class="text-bold">{{item.orderNo}}</text>
-          <status-tag status="{{item.status}}" size="small"></status-tag>
+  <view wx:else>
+    <view class="card stocktake-item" wx:for="{{list}}" wx:key="id" data-id="{{item.id}}" bindtap="onItemTap">
+      <view class="flex-row justify-between items-center">
+        <view>
+          <text class="text-bold">{{item.warehouse && item.warehouse.name ? item.warehouse.name : '-'}}</text>
+          <text class="text-sm text-muted mt-4">{{item.remark || '无备注'}}</text>
         </view>
-        <view class="flex-row justify-between mt-4">
-          <text class="text-sm text-secondary">{{item.warehouseName || '未指定仓库'}}</text>
-          <text class="text-base text-bold">{{item.totalCount}} 项</text>
-        </view>
-        <text class="text-sm text-muted mt-4">{{item.createdAt}}</text>
+        <status-tag status="{{item.status}}"></status-tag>
       </view>
-
-      <view wx:if="{{loading && orders.length > 0}}" class="loading-center">
-        <text>加载更多...</text>
-      </view>
+      <text class="text-xs text-secondary mt-8">{{item.createdAt}}</text>
     </view>
   </view>
 
-  <!-- 新建盘点单 -->
-  <view wx:if="{{showForm}}">
-    <text class="page-title mb-16">新建盘点单</text>
-
-    <view class="input-group">
-      <text class="input-label">盘点仓库</text>
-      <picker class="picker-field" mode="selector" range="{{warehouses}}" range-key="name" value="{{formWarehouseIndex}}" bindchange="onFormWarehouseChange">
-        <text wx:if="{{formWarehouseIndex >= 0}}">{{warehouses[formWarehouseIndex].name}}</text>
-        <text wx:else class="text-muted">请选择仓库</text>
-      </picker>
-    </view>
-
-    <view class="section-header">
-      <text class="section-header-title">盘点商品</text>
-    </view>
-
-    <view wx:if="{{formItems.length === 0}}" class="empty-state" style="padding: 20px;">
-      <text class="text-muted">请先选择仓库，系统将加载该仓库的商品库存</text>
-    </view>
-
-    <view wx:for="{{formItems}}" wx:key="productId" class="card">
-      <view class="flex-row justify-between">
-        <text class="text-bold">{{item.productName}}</text>
+  <!-- Create Modal -->
+  <view wx:if="{{showCreate}}" class="modal-mask" bindtap="onHideCreate">
+    <view class="modal-content" catchtap>
+      <text class="modal-title">新建盘点单</text>
+      <view class="form-group">
+        <text class="form-label">盘点仓库</text>
+        <picker class="form-picker" mode="selector" range="{{warehouses}}" range-key="name" value="{{warehouseIndex}}" bindchange="onWarehouseChange">
+          <text wx:if="{{warehouseIndex >= 0}}">{{warehouses[warehouseIndex].name}}</text>
+          <text wx:else class="text-muted">请选择仓库</text>
+        </picker>
       </view>
-      <view class="flex-row mt-8 gap-8">
-        <view class="flex-1">
-          <text class="input-label">账面数量</text>
-          <text class="text-base">{{item.bookQuantity}}</text>
-        </view>
-        <view class="flex-1">
-          <text class="input-label">实际数量</text>
-          <input class="input-field" type="digit" value="{{item.actualQuantity}}" data-index="{{index}}" bindinput="onActualQuantityInput" />
-        </view>
+      <view class="form-group">
+        <text class="form-label">备注</text>
+        <input class="form-input" placeholder="选填" value="{{remark}}" bindinput="onRemarkInput" />
       </view>
-      <text wx:if="{{item.difference !== 0}}" class="text-sm {{item.difference > 0 ? 'text-success' : 'text-danger'}} mt-4">
-        差异: {{item.difference > 0 ? '+' : ''}}{{item.difference}}
-      </text>
-    </view>
-
-    <button class="btn-primary mt-16" loading="{{submitting}}" disabled="{{submitting || formItems.length === 0}}" bindtap="onSubmitStocktake">提交盘点</button>
-    <button class="btn-secondary mt-8" bindtap="onCancelForm">取消</button>
-  </view>
-
-  <!-- 详情模式 -->
-  <view wx:if="{{showDetail}}">
-    <view wx:if="{{detailLoading}}" class="loading-container">
-      <view class="loading-spinner"></view>
-    </view>
-
-    <view wx:elif="{{selectedOrder}}">
-      <view class="card">
-        <view class="flex-row justify-between">
-          <text class="text-lg text-bold">{{selectedOrder.orderNo}}</text>
-          <status-tag status="{{selectedOrder.status}}"></status-tag>
-        </view>
-        <view class="divider"></view>
-        <view class="info-row"><text class="info-label">仓库</text><text class="info-value">{{selectedOrder.warehouseName || '-'}}</text></view>
-        <view class="info-row"><text class="info-label">商品数</text><text class="info-value">{{selectedOrder.items?.length || 0}} 项</text></view>
-        <view class="info-row"><text class="info-label">备注</text><text class="info-value">{{selectedOrder.remark || '-'}}</text></view>
-        <view class="info-row"><text class="info-label">创建时间</text><text class="info-value">{{selectedOrder.createdAt}}</text></view>
+      <view class="section-header">
+        <text class="form-label">盘点商品</text>
+        <button class="btn btn-primary btn-xs" bindtap="onAddProduct">+ 添加</button>
       </view>
-
-      <text class="section-header-title mb-8">盘点明细</text>
-      <view class="card" wx:for="{{selectedOrder.items}}" wx:key="id">
-        <view class="flex-row justify-between">
-          <text>{{item.productName || item.productId}}</text>
-        </view>
-        <view class="flex-row justify-between mt-4">
+      <view wx:if="{{items.length === 0}}" class="text-center text-muted" style="padding: 20px 0;">请添加盘点商品</view>
+      <view wx:for="{{items}}" wx:key="productId" class="list-item">
+        <view class="flex-row justify-between items-center">
+          <text class="flex-1">{{item.productName}}</text>
           <text class="text-sm text-secondary">账面: {{item.bookQuantity}}</text>
-          <text class="text-sm text-secondary">实际: {{item.actualQuantity}}</text>
-          <text class="text-sm {{item.difference > 0 ? 'text-success' : 'text-danger'}}">
-            {{item.difference > 0 ? '+' : ''}}{{item.difference}}
-          </text>
+          <text class="text-danger ml-8" data-index="{{index}}" bindtap="onRemoveItem">删除</text>
         </view>
       </view>
+      <button class="btn btn-primary btn-block mt-16" loading="{{submitting}}" disabled="{{submitting || warehouseIndex < 0 || items.length === 0}}" bindtap="onSubmit">创建盘点单</button>
+      <view class="modal-close" bindtap="onHideCreate">取消</view>
+    </view>
+  </view>
 
-      <view class="flex-row gap-8 mt-16">
-        <button wx:if="{{selectedOrder.status === 'DRAFT'}}" class="btn-primary flex-1" data-id="{{selectedOrder.id}}" bindtap="onStartStocktake">开始盘点</button>
-        <button wx:if="{{selectedOrder.status === 'IN_PROGRESS'}}" class="btn-primary flex-1" data-id="{{selectedOrder.id}}" bindtap="onCompleteStocktake">完成盘点</button>
-        <button wx:if="{{selectedOrder.status === 'DRAFT' || selectedOrder.status === 'IN_PROGRESS'}}" class="btn-secondary flex-1" data-id="{{selectedOrder.id}}" bindtap="onCancelStocktake">作废</button>
-        <button class="btn-secondary flex-1" bindtap="onCloseDetail">返回</button>
-      </view>
+  <!-- Product Search -->
+  <view wx:if="{{showProductSearch}}" class="modal-mask" bindtap="onCloseSearch">
+    <view class="modal-content" catchtap>
+      <text class="modal-title">添加商品</text>
+      <view class="search-bar"><input class="search-input" placeholder="搜索商品" value="{{productSearch}}" bindinput="onProductSearchInput" /></view>
+      <scroll-view scroll-y style="max-height: 400rpx;">
+        <view wx:for="{{searchResults}}" wx:key="id" class="list-item" data-product="{{item}}" bindtap="onSelectProduct">
+          <text>{{item.name}}</text>
+        </view>
+        <view wx:if="{{searchResults.length === 0 && productSearch}}" class="text-center text-muted p-12">未找到</view>
+      </scroll-view>
+      <view class="modal-close" bindtap="onCloseSearch">取消</view>
     </view>
   </view>
 </view>

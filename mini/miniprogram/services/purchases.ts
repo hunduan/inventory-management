@@ -51,6 +51,12 @@ export const purchasesApi = {
   create(data: { supplierId?: string; warehouseId?: string; remark?: string; items: { productId: string; quantity: number; unitCost: number }[] }) {
     return api.post<PurchaseOrder>('/purchases', data);
   },
+  update(id: string, data: { supplierId?: string; warehouseId?: string; remark?: string; items: { productId: string; quantity: number; unitCost: number }[] }) {
+    return api.patch<PurchaseOrder>(`/purchases/${id}`, data);
+  },
+  receiveItem(id: string, itemId: string, quantity: number) {
+    return api.post<PurchaseOrder>(`/purchases/${id}/receive-item`, { itemId, quantity });
+  },
   confirm(id: string) {
     return api.post<PurchaseOrder>(`/purchases/${id}/confirm`);
   },

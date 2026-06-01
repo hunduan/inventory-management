@@ -1,14 +1,3 @@
-/* 语音录入页 */
-
-.voice-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-  padding: 40px 20px;
-}
-
 .voice-btn {
   width: 100px;
   height: 100px;

@@ -2,14 +2,18 @@
   "pages": [
     "pages/login/login",
     "pages/home/home",
-    "pages/products/products",
-    "pages/purchase/purchase",
     "pages/purchase-list/purchase-list",
-    "pages/sale/sale",
+    "pages/purchase/purchase",
     "pages/sale-list/sale-list",
+    "pages/sale/sale",
+    "pages/order-detail/order-detail",
+    "pages/products/products",
     "pages/inventory/inventory",
     "pages/stocktake/stocktake",
     "pages/transfers/transfers",
+    "pages/customers/customers",
+    "pages/suppliers/suppliers",
+    "pages/report/report",
     "pages/scan/scan",
     "pages/voice/voice",
     "pages/more/more"
@@ -26,29 +30,18 @@
     "color": "#999999",
     "selectedColor": "#0f766e",
     "backgroundColor": "#ffffff",
-    "borderStyle": "black",
+    "borderStyle": "white",
     "list": [
-      {
-        "pagePath": "pages/home/home",
-        "text": "首页"
-      },
-      {
-        "pagePath": "pages/purchase-list/purchase-list",
-        "text": "采购"
-      },
-      {
-        "pagePath": "pages/sale-list/sale-list",
-        "text": "销售"
-      },
-      {
-        "pagePath": "pages/inventory/inventory",
-        "text": "库存"
-      },
-      {
-        "pagePath": "pages/more/more",
-        "text": "更多"
-      }
+      { "pagePath": "pages/home/home", "text": "首页" },
+      { "pagePath": "pages/purchase-list/purchase-list", "text": "采购" },
+      { "pagePath": "pages/sale-list/sale-list", "text": "销售" },
+      { "pagePath": "pages/inventory/inventory", "text": "库存" },
+      { "pagePath": "pages/more/more", "text": "更多" }
     ]
+  },
+  "usingComponents": {
+    "status-tag": "/components/status-tag/status-tag",
+    "empty-state": "/components/empty-state/empty-state"
   },
   "sitemapLocation": "sitemap.json",
   "lazyCodeLoading": "requiredComponents"

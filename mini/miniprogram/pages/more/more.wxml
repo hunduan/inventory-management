@@ -1,52 +1,60 @@
-<view class="page">
-  <text class="page-title mb-16">更多功能</text>
+<view class="page page-enter">
+  <!-- User Profile Card -->
+  <view class="card more-profile" bindtap="onViewProfile">
+    <view class="more-avatar">{{user ? user.name.charAt(0).toUpperCase() : 'U'}}</view>
+    <view class="more-user-info">
+      <text class="text-bold text-base">{{user ? user.name : '未登录'}}</text>
+      <text class="text-sm text-secondary">{{user ? user.email : ''}}</text>
+    </view>
+    <text class="text-muted more-arrow">›</text>
+  </view>
 
-  <view class="more-grid">
-    <view class="more-item" bindtap="onNavigate" data-url="/pages/stocktake/stocktake">
-      <text class="more-item-icon">📋</text>
-      <text class="more-item-text">盘点</text>
+  <!-- Menu Sections -->
+  <view class="card more-menu">
+    <view class="more-menu-item" bindtap="onNavigate" data-url="/pages/products/products">
+      <text class="more-menu-icon">📦</text>
+      <text class="more-menu-text">商品管理</text>
+      <text class="more-menu-arrow">›</text>
     </view>
-    <view class="more-item" bindtap="onNavigate" data-url="/pages/transfers/transfers">
-      <text class="more-item-icon">🚚</text>
-      <text class="more-item-text">调拨</text>
+    <view class="more-menu-item" bindtap="onNavigate" data-url="/pages/customers/customers">
+      <text class="more-menu-icon">👥</text>
+      <text class="more-menu-text">客户管理</text>
+      <text class="more-menu-arrow">›</text>
     </view>
-    <view class="more-item" bindtap="onNavigate" data-url="/pages/products/products">
-      <text class="more-item-icon">📦</text>
-      <text class="more-item-text">商品</text>
+    <view class="more-menu-item" bindtap="onNavigate" data-url="/pages/suppliers/suppliers">
+      <text class="more-menu-icon">🏭</text>
+      <text class="more-menu-text">供应商管理</text>
+      <text class="more-menu-arrow">›</text>
     </view>
-    <view class="more-item" bindtap="onNavigate" data-url="/pages/scan/scan">
-      <text class="more-item-icon">📷</text>
-      <text class="more-item-text">扫码</text>
+    <view class="more-menu-item" bindtap="onNavigate" data-url="/pages/stocktake/stocktake">
+      <text class="more-menu-icon">🔍</text>
+      <text class="more-menu-text">盘点管理</text>
+      <text class="more-menu-arrow">›</text>
     </view>
-    <view class="more-item" bindtap="onNavigate" data-url="/pages/voice/voice">
-      <text class="more-item-icon">🎤</text>
-      <text class="more-item-text">语音</text>
+    <view class="more-menu-item" bindtap="onNavigate" data-url="/pages/report/report">
+      <text class="more-menu-icon">📊</text>
+      <text class="more-menu-text">报表统计</text>
+      <text class="more-menu-arrow">›</text>
+    </view>
+    <view class="more-menu-item" bindtap="onNavigate" data-url="/pages/transfers/transfers">
+      <text class="more-menu-icon">🚚</text>
+      <text class="more-menu-text">调拨管理</text>
+      <text class="more-menu-arrow">›</text>
     </view>
   </view>
 
-  <text class="section-header-title mb-12">设置</text>
-
-  <view class="card">
-    <view class="list-item" bindtap="onViewProfile">
-      <view class="flex-row justify-between">
-        <text>个人信息</text>
-        <text class="text-sm text-secondary">{{user?.name || '-'}}</text>
-      </view>
+  <view class="card more-menu">
+    <view class="more-menu-item" bindtap="onViewApiInfo">
+      <text class="more-menu-icon">🔗</text>
+      <text class="more-menu-text">服务器地址</text>
+      <text class="more-menu-arrow">›</text>
     </view>
-    <view class="divider"></view>
-    <view class="list-item" bindtap="onViewApiInfo">
-      <view class="flex-row justify-between">
-        <text>服务器地址</text>
-        <text class="text-sm text-secondary">{{apiBase}}</text>
-      </view>
+    <view class="more-menu-item">
+      <text class="more-menu-icon">ℹ️</text>
+      <text class="more-menu-text">版本</text>
+      <text class="text-sm text-secondary">v1.0.0</text>
     </view>
   </view>
 
-  <view class="mt-24">
-    <button class="btn-secondary" bindtap="onLogout">退出登录</button>
-  </view>
-
-  <view class="text-center text-muted text-sm mt-16">
-    <text>进销存管理系统 v1.0.0</text>
-  </view>
+  <button class="btn btn-danger btn-block mt-24" bindtap="onLogout">退出登录</button>
 </view>

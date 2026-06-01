@@ -1,57 +1,27 @@
-/* 首页样式 */
+/* 首页 - Warm Minimalist */
 
-/* KPI 行 */
-.kpi-row {
-  display: flex;
-  gap: 8px;
+.home-header {
   margin-bottom: 16px;
 }
 
-.kpi-card {
-  flex: 1;
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-  text-align: center;
-}
-
-.kpi-card-alert {
-  background: #fef2f2;
-}
-
-.kpi-label {
-  font-size: 11px;
-  color: #78716c;
-  display: block;
-  margin-bottom: 4px;
-}
-
-.kpi-value {
-  font-size: 22px;
+.home-greeting-text {
+  font-size: 20px;
   font-weight: 700;
-  color: #0f766e;
+  color: #1c1917;
+}
+
+.home-date {
+  font-size: 13px;
+  color: #78716c;
+  margin-top: 2px;
   display: block;
 }
 
-.kpi-value-alert {
-  color: #dc2626;
-}
-
-.kpi-unit {
-  font-size: 11px;
-  color: #a8a29e;
-  display: block;
-}
-
-/* 快捷操作网格 */
+/* Quick Action Grid */
 .quick-grid {
   display: flex;
   flex-wrap: wrap;
-  background: #ffffff;
-  border-radius: 8px;
-  padding: 12px 8px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  gap: 0;
 }
 
 .quick-item {
@@ -59,16 +29,35 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 12px 4px;
+  padding: 12px 0;
   box-sizing: border-box;
 }
 
-.quick-icon {
-  font-size: 28px;
+.quick-icon-wrap {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   margin-bottom: 6px;
+}
+
+.quick-icon-text {
+  font-size: 24px;
 }
 
 .quick-name {
   font-size: 12px;
-  color: #1c1917;
+  color: #78716c;
+}
+
+/* Order cards */
+.order-card {
+  margin-bottom: 8px;
+  cursor: pointer;
+}
+
+.order-card:active {
+  opacity: 0.8;
 }

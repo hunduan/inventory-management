@@ -1,86 +1,108 @@
 import purchasesApi from '../../services/purchases';
-import productsApi, { Product } from '../../services/products';
+import productsApi from '../../services/products';
+import { api } from '../../services/request';
 
 Page({
   data: {
-    suppliers: [] as any[],
-    warehouses: [] as any[],
+    suppliers: [],
+    warehouses: [],
     supplierIndex: -1,
     warehouseIndex: -1,
-    items: [] as { productId: string; productName: string; quantity: number; unitCost: number; subtotal: number }[],
+    items: [] as any[],
     remark: '',
     productSearch: '',
-    searchResults: [] as Product[],
+    searchResults: [],
     showProductSearch: false,
+    searchLoading: false,
     submitting: false,
     totalAmount: 0,
+    loading: true,
+    editId: '',
+    isEdit: false,
   },
 
-  onLoad() {
-    this.loadOptions();
-  },
-
-  async loadOptions() {
+  async onLoad(options: any) {
+    this.setData({ loading: true });
     try {
-      const [suppliersRes, warehousesRes] = await Promise.all([
-        this.getSuppliers(),
-        this.getWarehouses(),
+      const [supRes, warRes] = await Promise.all([
+        api.get<{ data: any[] }>('/suppliers?limit=100'),
+        api.get<{ data: any[] }>('/warehouses?limit=100'),
       ]);
-      this.setData({ suppliers: suppliersRes, warehouses: warehousesRes });
+      this.setData({
+        suppliers: supRes.data || [],
+        warehouses: warRes.data || [],
+      });
+
+      // Edit mode: load existing order
+      if (options?.id) {
+        const order = await purchasesApi.getById(options.id);
+        this.setData({ editId: options.id, isEdit: true });
+        const sIdx = (supRes.data || []).findIndex((s: any) => s.id === order.supplierId);
+        const wIdx = (warRes.data || []).findIndex((w: any) => w.id === order.warehouseId);
+        this.setData({
+          supplierIndex: sIdx >= 0 ? sIdx : -1,
+          warehouseIndex: wIdx >= 0 ? wIdx : -1,
+          remark: order.remark || '',
+          items: (order.items || []).map((i: any) => ({
+            productId: i.productId,
+            productName: i.product?.name || i.productName || '',
+            quantity: i.quantity,
+            unitCost: i.unitCost,
+            subtotal: i.quantity * i.unitCost,
+          })),
+          totalAmount: order.totalAmount || 0,
+        });
+      }
+
+      if (options?.warehouseId && !options?.id) {
+        const idx = (warRes.data || []).findIndex((w: any) => w.id === options.warehouseId);
+        if (idx >= 0) this.setData({ warehouseIndex: idx });
+      }
+      if (options?.productId) {
+        try {
+          const product = await productsApi.getById(options.productId);
+          if (product) {
+            this.addItemToOrder(product);
+          }
+        } catch {}
+      }
     } catch (err: any) {
       wx.showToast({ title: '加载数据失败', icon: 'none' });
+    } finally {
+      this.setData({ loading: false });
     }
   },
 
-  async getSuppliers() {
-    const { api } = await import('../../services/request');
-    const res = await api.get<{ data: any[] }>('/suppliers?limit=100');
-    return res.data || [];
-  },
+  onSupplierChange(e: WechatMiniprogram.PickerChange) { this.setData({ supplierIndex: Number(e.detail.value) }); },
+  onWarehouseChange(e: WechatMiniprogram.PickerChange) { this.setData({ warehouseIndex: Number(e.detail.value) }); },
+  onRemarkInput(e: WechatMiniprogram.Input) { this.setData({ remark: e.detail.value }); },
 
-  async getWarehouses() {
-    const { api } = await import('../../services/request');
-    const res = await api.get<{ data: any[] }>('/warehouses?limit=100');
-    return res.data || [];
-  },
-
-  onSupplierChange(e: WechatMiniprogram.PickerChange) {
-    this.setData({ supplierIndex: Number(e.detail.value) });
-  },
-
-  onWarehouseChange(e: WechatMiniprogram.PickerChange) {
-    this.setData({ warehouseIndex: Number(e.detail.value) });
-  },
-
-  onRemarkInput(e: WechatMiniprogram.Input) {
-    this.setData({ remark: e.detail.value });
-  },
-
-  onAddProduct() {
-    this.setData({ showProductSearch: true, productSearch: '', searchResults: [] });
-  },
+  onAddProduct() { this.setData({ showProductSearch: true, productSearch: '', searchResults: [] }); },
+  onCloseSearch() { this.setData({ showProductSearch: false }); },
 
   onProductSearchInput(e: WechatMiniprogram.Input) {
-    const search = e.detail.value;
-    this.setData({ productSearch: search });
-    if (search.trim()) {
-      this.searchProducts(search);
-    } else {
-      this.setData({ searchResults: [] });
-    }
+    const query = e.detail.value;
+    this.setData({ productSearch: query });
+    if (query.trim()) this.searchProducts(query);
+    else this.setData({ searchResults: [] });
   },
 
   async searchProducts(query: string) {
+    this.setData({ searchLoading: true });
     try {
-      const res = await productsApi.list({ search: query, limit: 10 });
-      this.setData({ searchResults: res.data });
-    } catch {
-      this.setData({ searchResults: [] });
-    }
+      const res = await productsApi.list({ search: query });
+      this.setData({ searchResults: res.data || [] });
+    } catch { this.setData({ searchResults: [] }); }
+    finally { this.setData({ searchLoading: false }); }
   },
 
   onSelectProduct(e: WechatMiniprogram.TouchEvent) {
-    const product = e.currentTarget.dataset.product as Product;
+    const product = e.currentTarget.dataset.product;
+    this.addItemToOrder(product);
+    this.setData({ showProductSearch: false });
+  },
+
+  addItemToOrder(product: any) {
     const items = [...this.data.items];
     const existing = items.find(i => i.productId === product.id);
     if (existing) {
@@ -95,7 +117,7 @@ Page({
         subtotal: product.costPrice || 0,
       });
     }
-    this.setData({ items, showProductSearch: false, totalAmount: this.calcTotal(items) });
+    this.setData({ items, totalAmount: this.calcTotal(items) });
   },
 
   onQuantityInput(e: WechatMiniprogram.Input) {
@@ -123,38 +145,35 @@ Page({
     this.setData({ items, totalAmount: this.calcTotal(items) });
   },
 
-  calcTotal(items: any[]): number {
-    return items.reduce((sum, item) => sum + (item.subtotal || 0), 0);
+  calcTotal(items: any[]) {
+    return items.reduce((sum: number, i: any) => sum + (i.subtotal || 0), 0);
   },
 
   async onSubmit() {
     if (this.data.items.length === 0) {
-      wx.showToast({ title: '请至少添加一个商品', icon: 'none' });
-      return;
+      wx.showToast({ title: '请至少添加一个商品', icon: 'none' }); return;
     }
     this.setData({ submitting: true });
     try {
-      const { supplierId, warehouseId } = this.getSelectedIds();
-      await purchasesApi.create({
-        supplierId,
-        warehouseId,
+      const { suppliers, warehouses, supplierIndex, warehouseIndex, editId, isEdit } = this.data;
+      const data = {
+        supplierId: supplierIndex >= 0 ? suppliers[supplierIndex]?.id : undefined,
+        warehouseId: warehouseIndex >= 0 ? warehouses[warehouseIndex]?.id : undefined,
         remark: this.data.remark,
         items: this.data.items.map(i => ({ productId: i.productId, quantity: i.quantity, unitCost: i.unitCost })),
-      });
-      wx.showToast({ title: '创建成功', icon: 'success' });
+      };
+      if (isEdit) {
+        await purchasesApi.update(editId, data);
+        wx.showToast({ title: '保存成功', icon: 'success' });
+      } else {
+        await purchasesApi.create(data);
+        wx.showToast({ title: '创建成功', icon: 'success' });
+      }
       wx.navigateBack();
     } catch (err: any) {
-      wx.showToast({ title: err.message || '创建失败', icon: 'none' });
+      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
     } finally {
       this.setData({ submitting: false });
     }
-  },
-
-  getSelectedIds() {
-    const { suppliers, warehouses, supplierIndex, warehouseIndex } = this.data;
-    return {
-      supplierId: supplierIndex >= 0 ? suppliers[supplierIndex]?.id : undefined,
-      warehouseId: warehouseIndex >= 0 ? warehouses[warehouseIndex]?.id : undefined,
-    };
   },
 });

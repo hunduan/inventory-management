@@ -1,11 +1,11 @@
-<view class="page">
-  <view class="voice-container">
+<view class="page page-enter">
+  <view class="flex-col items-center" style="padding-top: 40px;">
     <button class="voice-btn {{isRecording ? 'voice-btn-recording' : 'voice-btn-idle'}}" bindtap="onToggleRecord">
       {{isRecording ? '🔴' : '🎤'}}
     </button>
 
-    <text class="text-lg text-bold mb-8">{{isRecording ? '正在录音...' : '点击开始录音'}}</text>
-    <text class="text-sm text-secondary mb-24">说出商品和数量，例如"苹果10个，牛奶5瓶"</text>
+    <text class="text-lg text-bold mt-12">{{isRecording ? '正在录音...' : '点击开始录音'}}</text>
+    <text class="text-sm text-secondary mt-8 mb-24">说出商品和数量，例如"苹果10个，牛奶5瓶"</text>
 
     <view wx:if="{{isRecording}}" class="voice-wave">
       <view class="voice-wave-bar"></view>
@@ -15,12 +15,12 @@
       <view class="voice-wave-bar"></view>
     </view>
 
-    <view wx:if="{{recognizedText}}" class="card" style="width:100%;margin-bottom:12px;">
+    <view wx:if="{{recognizedText}}" class="card" style="width:100%;">
       <text class="text-sm text-secondary mb-4">识别结果:</text>
       <text class="text-base">{{recognizedText}}</text>
     </view>
 
-    <view wx:if="{{parsedResult}}" class="card" style="width:100%;">
+    <view wx:if="{{parsedResult}}" class="card mt-12" style="width:100%;">
       <view class="flex-row justify-between mb-8">
         <text class="text-bold">{{parsedResult.type === 'PURCHASE' ? '采购单' : '销售单'}}</text>
         <text class="text-sm text-secondary">{{parsedResult.supplierName || parsedResult.customerName || ''}}</text>
@@ -31,10 +31,10 @@
       </view>
     </view>
 
-    <button wx:if="{{parsedResult}}" class="btn-primary mt-12" bindtap="onCreateOrder">创建订单</button>
-    <button wx:if="{{parsedResult || recognizedText}}" class="btn-secondary mt-8" bindtap="onClear">清除</button>
+    <button wx:if="{{parsedResult}}" class="btn btn-primary btn-block mt-12" bindtap="onCreateOrder">创建订单</button>
+    <button wx:if="{{parsedResult || recognizedText}}" class="btn btn-secondary btn-block mt-8" bindtap="onClear">清除</button>
 
-    <view wx:if="{{errorMsg}}" class="card" style="background:#fef2f2;border-color:#fecaca;width:100%;margin-top:12px;">
+    <view wx:if="{{errorMsg}}" class="card mt-12" style="width:100%;background:#fef2f2;border:1px solid #fecaca;">
       <text class="text-danger">{{errorMsg}}</text>
     </view>
   </view>

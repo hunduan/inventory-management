@@ -1,28 +1,76 @@
-/* 更多页 */
+/* 更多页 - Warm Minimalist */
 
-.more-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+.more-profile {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
+  cursor: pointer;
 }
 
-.more-item {
+.more-profile:active {
+  opacity: 0.8;
+}
+
+.more-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #0f766e;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.more-user-info {
+  flex: 1;
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.more-arrow {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.more-menu {
+  padding: 0;
+}
+
+.more-menu-item {
+  display: flex;
   align-items: center;
-  padding: 16px 8px;
-  background: #ffffff;
-  border-radius: 8px;
-  border: 1px solid #e7e5e4;
+  padding: 14px 16px;
+  border-bottom: 1px solid #f0f0f0;
+  cursor: pointer;
 }
 
-.more-item-icon {
-  font-size: 28px;
-  margin-bottom: 8px;
+.more-menu-item:last-child {
+  border-bottom: none;
 }
 
-.more-item-text {
-  font-size: 12px;
+.more-menu-item:active {
+  background: #fafaf9;
+}
+
+.more-menu-icon {
+  font-size: 20px;
+  margin-right: 12px;
+}
+
+.more-menu-text {
+  flex: 1;
+  font-size: 15px;
   color: #1c1917;
+}
+
+.more-menu-arrow {
+  color: #a8a29e;
+  font-size: 18px;
 }

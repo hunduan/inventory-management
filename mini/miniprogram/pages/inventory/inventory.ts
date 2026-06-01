@@ -1,67 +1,65 @@
-import inventoryApi from '../../services/inventory';
 import { api } from '../../services/request';
 
 Page({
   data: {
+    items: [] as any[],
     warehouses: [] as any[],
     warehouseIndex: -1,
-    search: '',
-    items: [] as any[],
-    alertCount: 0,
+    searchQuery: '',
     page: 1,
-    limit: 20,
+    total: 0,
     loading: false,
     hasMore: true,
-    total: 0,
-    showDetail: false,
-    selectedItem: null as any,
-    recentLogs: [] as any[],
+    showAlerts: false,
   },
 
-  onLoad() {
-    this.loadWarehouses();
-    this.loadAlerts();
-    this.loadItems();
+  async onLoad() {
+    await this.loadWarehouses();
+    this.loadInventory();
+  },
+
+  onShow() {
+    if (!this.data.loading) {
+      this.setData({ page: 1, items: [], hasMore: true });
+      this.loadInventory();
+    }
   },
 
   onPullDownRefresh() {
     this.setData({ page: 1, items: [], hasMore: true });
-    Promise.all([this.loadAlerts(), this.loadItems()]).then(() => wx.stopPullDownRefresh());
+    this.loadInventory().then(() => wx.stopPullDownRefresh());
   },
 
   onReachBottom() {
     if (this.data.hasMore && !this.data.loading) {
       this.setData({ page: this.data.page + 1 });
-      this.loadItems();
+      this.loadInventory();
     }
   },
 
   async loadWarehouses() {
     try {
-      const r = await api.get<{ data: any[] }>('/warehouses?limit=100');
-      this.setData({ warehouses: r.data || [] });
-    } catch { /* ignore */ }
+      const res = await api.get<{ data: any[] }>('/warehouses?limit=100');
+      this.setData({ warehouses: res.data || [] });
+    } catch {}
   },
 
-  async loadAlerts() {
-    try {
-      const r = await inventoryApi.alerts();
-      this.setData({ alertCount: r.data?.length || 0 });
-    } catch { /* ignore */ }
-  },
-
-  async loadItems() {
+  async loadInventory() {
     if (this.data.loading) return;
     this.setData({ loading: true });
     try {
-      const params: any = { page: this.data.page, limit: this.data.limit };
-      if (this.data.search) params.search = this.data.search;
-      if (this.data.warehouseIndex >= 0) params.warehouseId = this.data.warehouses[this.data.warehouseIndex]?.id;
-      const res = await inventoryApi.list(params);
+      const params: any = { page: this.data.page, limit: 20 };
+      const { warehouses, warehouseIndex } = this.data;
+      if (warehouseIndex >= 0) params.warehouseId = warehouses[warehouseIndex]?.id;
+      if (this.data.searchQuery) params.productName = this.data.searchQuery;
+
+      const res = this.data.showAlerts
+        ? await api.get<{ data: any[]; total: number }>('/inventory/alerts?' + this.buildQuery(params))
+        : await api.get<{ data: any[]; total: number }>('/inventory?' + this.buildQuery(params));
       this.setData({
         items: this.data.page === 1 ? res.data : [...this.data.items, ...res.data],
         total: res.total,
-        hasMore: this.data.page * this.data.limit < res.total,
+        hasMore: this.data.page * 20 < res.total,
       });
     } catch (err: any) {
       wx.showToast({ title: err.message || '加载失败', icon: 'none' });
@@ -70,45 +68,45 @@ Page({
     }
   },
 
+  buildQuery(params: any) {
+    return Object.entries(params).filter(([_, v]) => v !== undefined && v !== '').map(([k, v]) => `${k}=${v}`).join('&');
+  },
+
   onWarehouseChange(e: WechatMiniprogram.PickerChange) {
     this.setData({ warehouseIndex: Number(e.detail.value), page: 1, items: [], hasMore: true });
-    this.loadItems();
+    this.loadInventory();
   },
 
   onSearchInput(e: WechatMiniprogram.Input) {
-    const q = e.detail.value;
-    this.setData({ search: q });
-    if (!q) {
-      this.setData({ page: 1, items: [], hasMore: true });
-      this.loadItems();
-    }
+    this.setData({ searchQuery: e.detail.value });
   },
 
-  async onSearchConfirm() {
+  onSearch() {
     this.setData({ page: 1, items: [], hasMore: true });
-    this.loadItems();
+    this.loadInventory();
   },
 
-  onShowAlerts() {
-    this.setData({ search: '', warehouseIndex: -1, page: 1, items: [], hasMore: true });
-    this.loadItems();
-    wx.showToast({ title: `有 ${this.data.alertCount} 项商品库存不足`, icon: 'none' });
+  onToggleAlerts() {
+    this.setData({ showAlerts: !this.data.showAlerts, page: 1, items: [], hasMore: true });
+    this.loadInventory();
   },
 
-  async onItemTap(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id;
-    const item = this.data.items.find((i: any) => i.id === id);
-    if (!item) return;
-    this.setData({ selectedItem: item, showDetail: true });
-    try {
-      const r = await inventoryApi.logs({ productId: item.productId, limit: 10 });
-      this.setData({ recentLogs: r.data || [] });
-    } catch {
-      this.setData({ recentLogs: [] });
-    }
-  },
-
-  onCloseDetail() {
-    this.setData({ showDetail: false, selectedItem: null, recentLogs: [] });
+  onProductTap(e: WechatMiniprogram.TouchEvent) {
+    // Quick create purchase/sale from inventory
+    const { product, warehouse } = e.currentTarget.dataset;
+    wx.showActionSheet({
+      itemList: ['创建采购单', '创建销售单'],
+      success: (res) => {
+        if (res.tapIndex === 0) {
+          wx.navigateTo({
+            url: `/pages/purchase/purchase?productId=${product.id}&warehouseId=${warehouse?.id || ''}`,
+          });
+        } else if (res.tapIndex === 1) {
+          wx.navigateTo({
+            url: `/pages/sale/sale?productId=${product.id}&warehouseId=${warehouse?.id || ''}`,
+          });
+        }
+      },
+    });
   },
 });

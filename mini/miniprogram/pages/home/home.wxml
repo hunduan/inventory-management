@@ -1,59 +1,75 @@
-<view class="page">
-  <!-- KPI 卡片 -->
-  <view class="kpi-row">
-    <view class="kpi-card">
+<view class="page page-enter">
+  <!-- Date & Greeting -->
+  <view class="home-header">
+    <view class="home-greeting">
+      <text class="home-greeting-text">{{user ? user.name + ',' : ''}} 欢迎回来</text>
+      <text class="home-date">{{dateStr}}</text>
+    </view>
+  </view>
+
+  <!-- KPI Cards -->
+  <view class="kpi-grid">
+    <view class="kpi-card" bindtap="onQuickAction" data-id="purchase">
       <text class="kpi-label">今日采购额</text>
-      <text class="kpi-value">{{dashboard.todayPurchaseTotal || 0}}</text>
-      <text class="kpi-unit">元</text>
+      <text class="kpi-value">¥{{kpi.todayPurchases}}</text>
     </view>
-    <view class="kpi-card">
+    <view class="kpi-card" bindtap="onQuickAction" data-id="sale">
       <text class="kpi-label">今日销售额</text>
-      <text class="kpi-value">{{dashboard.todaySaleTotal || 0}}</text>
-      <text class="kpi-unit">元</text>
+      <text class="kpi-value">¥{{kpi.todaySales}}</text>
     </view>
-    <view class="kpi-card kpi-card-alert">
+    <view class="kpi-card" bindtap="onQuickAction" data-id="inventory">
       <text class="kpi-label">库存预警</text>
-      <text class="kpi-value kpi-value-alert">{{dashboard.alertCount || 0}}</text>
+      <text class="kpi-value" style="{{kpi.alertCount > 0 ? 'color: #dc2626;' : ''}}">{{kpi.alertCount}}</text>
       <text class="kpi-unit">项</text>
     </view>
   </view>
 
-  <!-- 快捷操作 -->
-  <view class="section-header">
-    <text class="section-header-title">快捷操作</text>
-  </view>
-  <view class="quick-grid">
-    <view class="quick-item" wx:for="{{quickActions}}" wx:key="id" data-id="{{item.id}}" bindtap="onQuickAction">
-      <text class="quick-icon">{{item.icon}}</text>
-      <text class="quick-name">{{item.name}}</text>
+  <!-- Quick Actions -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">快捷操作</text>
     </view>
-  </view>
-
-  <!-- 最近订单 -->
-  <view class="section-header mt-16">
-    <text class="section-header-title">最近订单</text>
-  </view>
-
-  <view wx:if="{{loading}}" class="loading-container">
-    <view class="loading-spinner"></view>
-    <text class="text-sm text-secondary mt-8">加载中...</text>
-  </view>
-
-  <view wx:elif="{{dashboard.recentOrders && dashboard.recentOrders.length > 0}}">
-    <view class="card" wx:for="{{dashboard.recentOrders}}" wx:key="id" data-id="{{item.id}}" data-type="{{item.type}}" bindtap="onViewOrder">
-      <view class="flex-row justify-between">
-        <text class="text-bold">{{item.orderNo}}</text>
-        <text class="text-sm">{{item.type === 'PURCHASE' ? '采购' : '销售'}}</text>
-      </view>
-      <view class="flex-row justify-between mt-8">
-        <text class="text-lg text-bold">{{item.totalAmount}}元</text>
-        <text class="text-sm text-secondary">{{item.createdAt}}</text>
+    <view class="quick-grid">
+      <view class="quick-item" wx:for="{{quickActions}}" wx:key="id" data-id="{{item.id}}" bindtap="onQuickAction">
+        <view class="quick-icon-wrap" style="background: {{item.bg}};">
+          <text class="quick-icon-text">{{item.icon}}</text>
+        </view>
+        <text class="quick-name">{{item.name}}</text>
       </view>
     </view>
   </view>
 
-  <view wx:else class="empty-state">
-    <text class="empty-state-icon">📋</text>
-    <text class="empty-state-text">暂无订单</text>
+  <!-- Recent Orders -->
+  <view class="section">
+    <view class="section-header">
+      <text class="section-title">最近订单</text>
+    </view>
+
+    <view wx:if="{{loading}}" class="loading-center">
+      <view class="loading-spinner"></view>
+      <text class="text-sm text-secondary mt-8">加载中...</text>
+    </view>
+
+    <view wx:elif="{{recentOrders.length > 0}}">
+      <view class="card order-card" wx:for="{{recentOrders}}" wx:key="id" data-id="{{item.id}}" data-type="{{item.type}}" bindtap="onOrderTap">
+        <view class="flex-row justify-between items-center">
+          <view class="flex-row items-center gap-8">
+            <text class="text-bold">{{item.orderNo}}</text>
+            <text wx:if="{{item.type === 'PURCHASE'}}" class="badge badge-info">采购</text>
+            <text wx:else class="badge badge-warning">销售</text>
+          </view>
+          <text class="badge badge-{{item.status === 'CONFIRMED' ? 'info' : item.status === 'RECEIVED' || item.status === 'DELIVERED' || item.status === 'COMPLETED' ? 'success' : item.status === 'CANCELLED' ? 'danger' : item.status === 'DRAFT' || item.status === 'IN_PROGRESS' ? 'warning' : 'default'}}">{{item.status}}</text>
+        </view>
+        <view class="flex-row justify-between items-center mt-8">
+          <text class="text-lg text-bold text-primary">¥{{item.totalAmount}}</text>
+          <text class="text-sm text-secondary">{{item.createdAt}}</text>
+        </view>
+      </view>
+    </view>
+
+    <view wx:else class="empty-state">
+      <text class="empty-icon">📋</text>
+      <text class="empty-text">暂无最近订单</text>
+    </view>
   </view>
 </view>

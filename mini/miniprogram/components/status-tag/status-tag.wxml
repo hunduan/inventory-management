@@ -1,3 +1,1 @@
-<view class="status-tag {{size === 'small' ? 'status-tag-small' : ''}}" style="color: {{color}}; background-color: {{bgColor}}; border-color: {{color}};">
-  {{text}}
-</view>
+<text class="status-tag status-tag-{{size}} {{className}}">{{label}}</text>

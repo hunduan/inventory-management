@@ -1,9 +1,6 @@
-import { api, API_BASE } from '../../services/request';
-
 Page({
   data: {
     user: null as any,
-    apiBase: API_BASE || 'http://localhost:3000/api',
   },
 
   onShow() {
@@ -12,8 +9,8 @@ Page({
 
   loadUserInfo() {
     try {
-      const user = wx.getStorageSync('user');
-      this.setData({ user: user ? JSON.parse(user) : null });
+      const userStr = wx.getStorageSync('user');
+      this.setData({ user: userStr ? JSON.parse(userStr) : null });
     } catch {
       this.setData({ user: null });
     }
@@ -25,13 +22,13 @@ Page({
   },
 
   onViewProfile() {
-    wx.showToast({ title: '个人信息功能开发中', icon: 'none' });
+    wx.showToast({ title: '个人信息', icon: 'none' });
   },
 
   onViewApiInfo() {
     wx.setClipboardData({
-      data: this.data.apiBase,
-      success: () => wx.showToast({ title: '已复制服务器地址', icon: 'success' }),
+      data: 'http://localhost:3000/api',
+      success: () => wx.showToast({ title: '已复制', icon: 'success' }),
     });
   },
 

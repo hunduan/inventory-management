@@ -3,16 +3,16 @@
 App<IAppOption>({
   globalData: {},
   onLaunch() {
-    // 检查登录状态
+    // Check login status
     const token = wx.getStorageSync('token');
-    if (token) {
-      console.log('App launched with existing token');
+    if (!token) {
+      wx.reLaunch({ url: '/pages/login/login' });
     }
   },
   onShow() {
-    // App 进入前台
+    // App enters foreground
   },
   onHide() {
-    // App 进入后台
+    // App enters background
   },
 })

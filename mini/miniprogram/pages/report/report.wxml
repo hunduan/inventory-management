@@ -1,0 +1,114 @@
+<view class="page page-enter">
+  <!-- Header -->
+  <view class="section-header">
+    <text class="section-title">报表统计</text>
+  </view>
+
+  <!-- Date Range -->
+  <view class="card date-row">
+    <picker class="date-picker" mode="date" value="{{startDate}}" bindchange="onStartDateChange">
+      <text class="date-label">从</text>
+      <text class="date-value">{{startDate}}</text>
+    </picker>
+    <text class="date-sep">至</text>
+    <picker class="date-picker" mode="date" value="{{endDate}}" bindchange="onEndDateChange">
+      <text class="date-label">到</text>
+      <text class="date-value">{{endDate}}</text>
+    </picker>
+  </view>
+
+  <!-- Tabs -->
+  <view class="tabs">
+    <view wx:for="{{tabs}}" wx:key="value"
+      class="tab {{activeTab === item.value ? 'tab-active' : ''}}"
+      data-tab="{{item.value}}"
+      bindtap="onTabChange">{{item.label}}</view>
+  </view>
+
+  <!-- Loading -->
+  <view wx:if="{{loading}}" class="loading-center">
+    <view class="loading-spinner loading-spinner-lg"></view>
+  </view>
+
+  <!-- Purchase Report -->
+  <view wx:elif="{{activeTab === 'purchase' && purchaseReport}}">
+    <view class="kpi-grid">
+      <view class="kpi-card">
+        <text class="kpi-value">{{purchaseReport.totalOrders || 0}}</text>
+        <text class="kpi-label">订单数</text>
+      </view>
+      <view class="kpi-card">
+        <text class="kpi-value">¥{{purchaseReport.totalAmount || 0}}</text>
+        <text class="kpi-label">采购总额</text>
+      </view>
+    </view>
+
+    <view wx:if="{{purchaseReport.bySupplier && purchaseReport.bySupplier.length > 0}}" class="card">
+      <view class="card-title">按供应商</view>
+      <view wx:for="{{purchaseReport.bySupplier}}" wx:key="supplierName" class="report-item">
+        <view class="flex-row justify-between items-center">
+          <text class="report-item-name">{{item.supplierName}}</text>
+          <view class="text-right">
+            <text class="report-item-amount">¥{{item.totalAmount}}</text>
+            <text class="report-item-count">{{item.orderCount}} 单</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Sale Report -->
+  <view wx:elif="{{activeTab === 'sale' && saleReport}}">
+    <view class="kpi-grid">
+      <view class="kpi-card">
+        <text class="kpi-value">{{saleReport.totalOrders || 0}}</text>
+        <text class="kpi-label">订单数</text>
+      </view>
+      <view class="kpi-card">
+        <text class="kpi-value">¥{{saleReport.totalAmount || 0}}</text>
+        <text class="kpi-label">销售总额</text>
+      </view>
+    </view>
+
+    <view wx:if="{{saleReport.byCustomer && saleReport.byCustomer.length > 0}}" class="card">
+      <view class="card-title">按客户</view>
+      <view wx:for="{{saleReport.byCustomer}}" wx:key="customerName" class="report-item">
+        <view class="flex-row justify-between items-center">
+          <text class="report-item-name">{{item.customerName}}</text>
+          <view class="text-right">
+            <text class="report-item-amount">¥{{item.totalAmount}}</text>
+            <text class="report-item-count">{{item.orderCount}} 单</text>
+          </view>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <!-- Profit Report -->
+  <view wx:elif="{{activeTab === 'profit' && profitReport}}">
+    <view class="kpi-grid grid-2">
+      <view class="kpi-card">
+        <text class="kpi-value">¥{{profitReport.totalRevenue || 0}}</text>
+        <text class="kpi-label">销售收入</text>
+      </view>
+      <view class="kpi-card">
+        <text class="kpi-value">¥{{profitReport.totalCost || 0}}</text>
+        <text class="kpi-label">采购成本</text>
+      </view>
+      <view class="kpi-card">
+        <text class="kpi-value text-success">¥{{profitReport.grossProfit || 0}}</text>
+        <text class="kpi-label">毛利润</text>
+      </view>
+      <view class="kpi-card">
+        <text class="kpi-value">{{profitReport.margin || 0}}%</text>
+        <text class="kpi-label">利润率</text>
+      </view>
+    </view>
+  </view>
+
+  <!-- Empty state -->
+  <view wx:elif="{{!loading && !purchaseReport && !saleReport && !profitReport}}" class="empty-state">
+    <text class="empty-icon">📊</text>
+    <text class="empty-text">选择日期范围查看报表</text>
+  </view>
+</view>

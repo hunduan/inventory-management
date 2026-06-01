@@ -1,10 +1,11 @@
-import authApi from '../../services/auth';
+import authApi, { LoginResponse } from '../../services/auth';
 
 Page({
   data: {
     email: '',
     password: '',
     loading: false,
+    error: '',
   },
 
   onLoad() {
@@ -15,29 +16,25 @@ Page({
   },
 
   onEmailInput(e: WechatMiniprogram.Input) {
-    this.setData({ email: e.detail.value });
+    this.setData({ email: e.detail.value, error: '' });
   },
 
   onPasswordInput(e: WechatMiniprogram.Input) {
-    this.setData({ password: e.detail.value });
+    this.setData({ password: e.detail.value, error: '' });
   },
 
   async onLogin() {
     const { email, password } = this.data;
-    if (!email || !password) {
-      wx.showToast({ title: '请输入邮箱和密码', icon: 'none' });
-      return;
-    }
+    if (!email || !password) return;
 
-    this.setData({ loading: true });
+    this.setData({ loading: true, error: '' });
     try {
       const res = await authApi.login(email, password);
       wx.setStorageSync('token', res.accessToken);
-      wx.setStorageSync('user', res.user);
-      wx.showToast({ title: '登录成功', icon: 'success' });
+      wx.setStorageSync('user', JSON.stringify(res.user));
       wx.reLaunch({ url: '/pages/home/home' });
     } catch (err: any) {
-      wx.showToast({ title: err.message || '登录失败', icon: 'none' });
+      this.setData({ error: err.message || '登录失败，请检查邮箱和密码' });
     } finally {
       this.setData({ loading: false });
     }

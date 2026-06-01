@@ -1,8 +1,4 @@
 {
-  "navigationBarTitleText": "盘点单",
-  "enablePullDownRefresh": true,
-  "onReachBottomDistance": 100,
-  "usingComponents": {
-    "status-tag": "/components/status-tag/status-tag"
-  }
+  "navigationBarTitleText": "盘点管理",
+  "usingComponents": { "status-tag": "/components/status-tag/status-tag" }
 }

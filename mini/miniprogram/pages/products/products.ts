@@ -1,27 +1,20 @@
-import productsApi, { Product } from '../../services/products';
+import productsApi from '../../services/products';
 
 Page({
   data: {
-    products: [] as Product[],
-    search: '',
+    products: [] as any[],
+    searchQuery: '',
     page: 1,
-    limit: 20,
     total: 0,
     loading: false,
     hasMore: true,
-    selectedProduct: null as Product | null,
-    showDetail: false,
   },
 
-  onLoad() {
-    this.loadProducts();
-  },
+  onLoad() { this.loadProducts(); },
 
   onPullDownRefresh() {
     this.setData({ page: 1, products: [], hasMore: true });
-    this.loadProducts().then(() => {
-      wx.stopPullDownRefresh();
-    });
+    this.loadProducts().then(() => wx.stopPullDownRefresh());
   },
 
   onReachBottom() {
@@ -35,15 +28,11 @@ Page({
     if (this.data.loading) return;
     this.setData({ loading: true });
     try {
-      const res = await productsApi.list({
-        search: this.data.search,
-        page: this.data.page,
-        limit: this.data.limit,
-      });
+      const res = await productsApi.list({ search: this.data.searchQuery, page: this.data.page });
       this.setData({
         products: this.data.page === 1 ? res.data : [...this.data.products, ...res.data],
         total: res.total,
-        hasMore: this.data.page * this.data.limit < res.total,
+        hasMore: this.data.page * 20 < res.total,
       });
     } catch (err: any) {
       wx.showToast({ title: err.message || '加载失败', icon: 'none' });
@@ -52,21 +41,6 @@ Page({
     }
   },
 
-  onSearchInput(e: WechatMiniprogram.Input) {
-    this.setData({ search: e.detail.value });
-  },
-
-  onSearch() {
-    this.setData({ page: 1, products: [], hasMore: true });
-    this.loadProducts();
-  },
-
-  onProductTap(e: WechatMiniprogram.TouchEvent) {
-    const product = e.currentTarget.dataset.product as Product;
-    this.setData({ selectedProduct: product, showDetail: true });
-  },
-
-  onCloseDetail() {
-    this.setData({ showDetail: false, selectedProduct: null });
-  },
+  onSearchInput(e: WechatMiniprogram.Input) { this.setData({ searchQuery: e.detail.value }); },
+  onSearch() { this.setData({ page: 1, products: [], hasMore: true }); this.loadProducts(); },
 });

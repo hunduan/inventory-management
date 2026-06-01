@@ -1,64 +1,53 @@
-<view class="page">
-  <text class="page-title mb-16">库存查询</text>
-
-  <view class="input-group">
-    <picker class="picker-field" mode="selector" range="{{warehouses}}" range-key="name" value="{{warehouseIndex}}" bindchange="onWarehouseChange">
-      <text wx:if="{{warehouseIndex >= 0}}">{{warehouses[warehouseIndex].name}}</text>
-      <text wx:else class="text-muted">全部仓库</text>
-    </picker>
-    <input class="input-field mt-8" placeholder="搜索商品名称" value="{{search}}" bindinput="onSearchInput" />
+<view class="page page-enter">
+  <!-- Header -->
+  <view class="section-header">
+    <text class="section-title">库存查询</text>
+    <button class="btn {{showAlerts ? 'btn-primary' : 'btn-secondary'}} btn-xs" bindtap="onToggleAlerts">
+      {{showAlerts ? '全部库存' : '库存预警'}}
+    </button>
   </view>
 
-  <view wx:if="{{alertCount > 0}}" class="card" style="background:#fef2f2;border-color:#fecaca;margin-bottom:12px;" bindtap="onShowAlerts">
-    <view class="flex-row justify-between">
-      <text class="text-danger">库存预警</text>
-      <text class="text-danger text-bold">{{alertCount}} 项商品库存不足</text>
+  <!-- Filters -->
+  <view class="card" style="padding: 12px;">
+    <view class="flex-row gap-8">
+      <picker class="form-picker flex-1" style="margin-bottom: 0;" mode="selector" range="{{warehouses}}" range-key="name" value="{{warehouseIndex}}" bindchange="onWarehouseChange">
+        <text wx:if="{{warehouseIndex >= 0}}">{{warehouses[warehouseIndex].name}}</text>
+        <text wx:else class="text-muted">全部仓库</text>
+      </picker>
+      <view class="search-bar flex-1" style="margin-bottom: 0;">
+        <input class="search-input" placeholder="搜索商品" value="{{searchQuery}}" bindinput="onSearchInput" bindconfirm="onSearch" />
+      </view>
+      <button class="btn btn-primary btn-sm" bindtap="onSearch">搜索</button>
     </view>
   </view>
 
-  <view wx:if="{{loading && items.length === 0}}" class="loading-container">
+  <!-- List -->
+  <view wx:if="{{loading && items.length === 0}}" class="loading-center">
     <view class="loading-spinner"></view>
-    <text class="text-sm text-secondary mt-8">加载中...</text>
   </view>
 
   <view wx:elif="{{items.length === 0}}" class="empty-state">
-    <text class="empty-state-icon">📦</text>
-    <text class="empty-state-text">暂无库存数据</text>
+    <text class="empty-icon">📊</text>
+    <text class="empty-text">{{showAlerts ? '暂无预警商品' : '暂无库存数据'}}</text>
   </view>
 
   <view wx:else>
-    <view class="card" wx:for="{{items}}" wx:key="id" data-id="{{item.id}}" bindtap="onItemTap">
-      <view class="flex-row justify-between">
-        <text class="text-bold">{{item.productName}}</text>
-        <text class="{{item.quantity <= item.alertMin ? 'text-danger' : ''}} text-bold">{{item.quantity}}</text>
-      </view>
-      <view class="flex-row justify-between mt-4">
-        <text class="text-sm text-secondary">{{item.sku || '-'}}</text>
-        <text class="text-sm text-secondary">预警线: {{item.alertMin}}</text>
+    <view class="card inventory-item" wx:for="{{items}}" wx:key="id" data-product="{{item.product}}" data-warehouse="{{item.warehouse}}" bindtap="onProductTap">
+      <view class="flex-row justify-between items-start">
+        <view class="flex-1">
+          <text class="text-bold">{{item.product && item.product.name ? item.product.name : '-'}}</text>
+          <text wx:if="{{item.product && item.product.barcode}}" class="text-sm text-muted">{{item.product.barcode}}</text>
+        </view>
+        <view class="text-right">
+          <text class="text-lg text-bold" style="color: {{(item.quantity || 0) <= (item.product && item.product.minStock ? item.product.minStock : 0) ? '#dc2626' : '#1c1917'}};">
+            {{item.quantity || 0}}
+          </text>
+          <text class="text-sm text-secondary">{{item.warehouse && item.warehouse.name ? item.warehouse.name : '-'}}</text>
+        </view>
       </view>
     </view>
 
-    <view wx:if="{{loading && items.length > 0}}" class="loading-center">
-      <text>加载更多...</text>
-    </view>
-  </view>
-
-  <!-- 库存详情弹窗 -->
-  <view wx:if="{{showDetail}}" class="modal-overlay" bindtap="onCloseDetail">
-    <view class="modal-content" catchtap>
-      <text class="modal-title">{{selectedItem?.productName}}</text>
-      <view class="divider"></view>
-      <view class="info-row"><text class="info-label">SKU</text><text class="info-value">{{selectedItem?.sku || '-'}}</text></view>
-      <view class="info-row"><text class="info-label">仓库</text><text class="info-value">{{selectedItem?.warehouseName || '-'}}</text></view>
-      <view class="info-row"><text class="info-label">当前库存</text><text class="info-value text-bold {{selectedItem?.quantity <= selectedItem?.alertMin ? 'text-danger' : ''}}">{{selectedItem?.quantity}}</text></view>
-      <view class="info-row"><text class="info-label">预警下限</text><text class="info-value">{{selectedItem?.alertMin}}</text></view>
-      <view class="divider"></view>
-      <text class="text-sm text-secondary mb-8">最近入库记录</text>
-      <view wx:for="{{recentLogs}}" wx:key="id" class="flex-row justify-between">
-        <text class="text-sm">{{item.type === 'PURCHASE' ? '采购入库' : item.type === 'SALE' ? '销售出库' : item.type === 'TRANSFER_IN' ? '调拨入库' : item.type === 'TRANSFER_OUT' ? '调拨出库' : item.type === 'STOCKTAKE' ? '盘点调整' : item.type}}</text>
-        <text class="text-sm {{item.change >= 0 ? 'text-success' : 'text-danger'}}">{{item.change >= 0 ? '+' : ''}}{{item.change}}</text>
-      </view>
-      <button class="btn-secondary mt-8" bindtap="onCloseDetail">关闭</button>
-    </view>
+    <view wx:if="{{loading}}" class="loading-center"><view class="loading-spinner"></view></view>
+    <view wx:elif="{{!hasMore && items.length > 0}}" class="text-center text-muted text-sm" style="padding: 12px 0;">已加载全部</view>
   </view>
 </view>

@@ -1,8 +1,6 @@
 {
-  "navigationBarTitleText": "销售单",
   "enablePullDownRefresh": true,
-  "onReachBottomDistance": 100,
-  "usingComponents": {
-    "status-tag": "/components/status-tag/status-tag"
-  }
+  "backgroundColor": "#f5f5f4",
+  "usingComponents": { "status-tag": "/components/status-tag/status-tag" },
+  "onReachBottomDistance": 100
 }

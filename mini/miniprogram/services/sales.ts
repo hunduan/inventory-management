@@ -51,6 +51,12 @@ export const salesApi = {
   create(data: { customerId?: string; warehouseId?: string; remark?: string; items: { productId: string; quantity: number; unitPrice: number }[] }) {
     return api.post<SaleOrder>('/sales', data);
   },
+  update(id: string, data: { customerId?: string; warehouseId?: string; remark?: string; items: { productId: string; quantity: number; unitPrice: number }[] }) {
+    return api.patch<SaleOrder>(`/sales/${id}`, data);
+  },
+  deliverItem(id: string, itemId: string, quantity: number) {
+    return api.post<SaleOrder>(`/sales/${id}/deliver-item`, { itemId, quantity });
+  },
   confirm(id: string) {
     return api.post<SaleOrder>(`/sales/${id}/confirm`);
   },

@@ -16,12 +16,3 @@
   color: #a8a29e;
   margin-bottom: 16px;
 }
-
-.empty-btn {
-  width: auto;
-  min-width: 120px;
-  height: 36px;
-  font-size: 14px;
-  border-radius: 18px;
-  padding: 0 20px;
-}

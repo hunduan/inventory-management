@@ -1,0 +1,32 @@
+<view class="page page-enter">
+  <view class="section-header">
+    <text class="section-title">客户管理</text>
+    <text class="text-sm text-secondary">{{count}} 人</text>
+  </view>
+
+  <view class="search-bar">
+    <text class="text-secondary">🔍</text>
+    <input class="search-input" placeholder="搜索客户名称" bindinput="onSearchInput" />
+  </view>
+
+  <view wx:if="{{loading && customers.length === 0}}" class="loading-center">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:elif="{{customers.length === 0}}" class="empty-state">
+    <text class="empty-icon">👥</text>
+    <text class="empty-text">暂无客户</text>
+  </view>
+
+  <view wx:else>
+    <view class="card" wx:for="{{customers}}" wx:key="id">
+      <view class="flex-row justify-between">
+        <view>
+          <text class="text-bold">{{item.name}}</text>
+          <text wx:if="{{item.phone}}" class="text-sm text-secondary ml-8">{{item.phone}}</text>
+        </view>
+      </view>
+      <text wx:if="{{item.email}}" class="text-sm text-muted mt-4">{{item.email}}</text>
+    </view>
+  </view>
+</view>

@@ -1,76 +1,98 @@
-<view class="page">
-  <text class="page-title mb-16">创建采购单</text>
-
-  <view class="input-group">
-    <text class="input-label">供应商</text>
-    <picker class="picker-field" mode="selector" range="{{suppliers}}" range-key="name" value="{{supplierIndex}}" bindchange="onSupplierChange">
-      <text wx:if="{{supplierIndex >= 0}}">{{suppliers[supplierIndex].name}}</text>
-      <text wx:else class="text-muted">请选择供应商</text>
-    </picker>
+<view class="page page-enter">
+  <view wx:if="{{loading}}" class="loading-center">
+    <view class="loading-spinner"></view>
   </view>
 
-  <view class="input-group">
-    <text class="input-label">入库仓库</text>
-    <picker class="picker-field" mode="selector" range="{{warehouses}}" range-key="name" value="{{warehouseIndex}}" bindchange="onWarehouseChange">
-      <text wx:if="{{warehouseIndex >= 0}}">{{warehouses[warehouseIndex].name}}</text>
-      <text wx:else class="text-muted">请选择仓库</text>
-    </picker>
-  </view>
+  <view wx:else>
+    <text class="text-xl text-bold mb-16">{{isEdit ? '编辑采购单' : '新建采购单'}}</text>
 
-  <view class="section-header">
-    <text class="section-header-title">商品明细</text>
-    <button class="btn-small btn-small-primary" bindtap="onAddProduct">+ 添加</button>
-  </view>
-
-  <view wx:if="{{items.length === 0}}" class="empty-state" style="padding: 20px;">
-    <text class="text-muted">请点击"添加"选择商品</text>
-  </view>
-
-  <view wx:for="{{items}}" wx:key="productId" class="card">
-    <view class="flex-row justify-between">
-      <text class="text-bold">{{item.productName}}</text>
-      <text class="text-danger" data-index="{{index}}" bindtap="onRemoveItem">删除</text>
-    </view>
-    <view class="flex-row mt-8 gap-8">
-      <view class="flex-1">
-        <text class="input-label">数量</text>
-        <input class="input-field" type="digit" value="{{item.quantity}}" data-index="{{index}}" bindinput="onQuantityInput" />
+    <view class="card">
+      <view class="form-group">
+        <text class="form-label">供应商</text>
+        <picker class="form-picker" mode="selector" range="{{suppliers}}" range-key="name" value="{{supplierIndex}}" bindchange="onSupplierChange">
+          <text wx:if="{{supplierIndex >= 0}}" class="text-base">{{suppliers[supplierIndex].name}}</text>
+          <text wx:else class="text-muted">请选择供应商</text>
+        </picker>
       </view>
-      <view class="flex-1">
-        <text class="input-label">单价</text>
-        <input class="input-field" type="digit" value="{{item.unitCost}}" data-index="{{index}}" bindinput="onCostInput" />
+      <view class="form-group">
+        <text class="form-label">入库仓库</text>
+        <picker class="form-picker" mode="selector" range="{{warehouses}}" range-key="name" value="{{warehouseIndex}}" bindchange="onWarehouseChange">
+          <text wx:if="{{warehouseIndex >= 0}}" class="text-base">{{warehouses[warehouseIndex].name}}</text>
+          <text wx:else class="text-muted">请选择仓库</text>
+        </picker>
       </view>
     </view>
-    <text class="text-sm text-secondary mt-8">小计: ¥{{item.subtotal}}</text>
+
+    <!-- Items Section -->
+    <view class="card">
+      <view class="section-header">
+        <text class="section-title">商品明细</text>
+        <button class="btn btn-primary btn-xs" bindtap="onAddProduct">+ 添加商品</button>
+      </view>
+      <view wx:if="{{items.length === 0}}" class="text-center p-12">
+        <text class="text-muted">点击"添加商品"选择商品</text>
+      </view>
+      <view wx:for="{{items}}" wx:key="productId" class="p-12">
+        <view class="flex-row justify-between items-center">
+          <view class="flex-1">
+            <text class="text-bold">{{item.productName}}</text>
+            <text class="text-sm text-muted mt-4">成本价: ¥{{item.unitCost}}</text>
+          </view>
+          <text class="text-danger" data-index="{{index}}" bindtap="onRemoveItem">删除</text>
+        </view>
+        <view class="gap-12 mt-8">
+          <view class="flex-1">
+            <text class="form-label">数量</text>
+            <input class="form-input" type="digit" value="{{item.quantity}}" data-index="{{index}}" bindinput="onQuantityInput" />
+          </view>
+          <view class="flex-1">
+            <text class="form-label">单价</text>
+            <input class="form-input" type="digit" value="{{item.unitCost}}" data-index="{{index}}" bindinput="onCostInput" />
+          </view>
+        </view>
+        <text class="text-sm text-secondary mt-4">小计: ¥{{item.subtotal.toFixed(2)}}</text>
+      </view>
+    </view>
+
+    <!-- Total -->
+    <view class="card flex-row justify-between items-center">
+      <text class="text-base text-bold">合计</text>
+      <text class="text-xl text-bold text-primary">¥{{totalAmount.toFixed(2)}}</text>
+    </view>
+
+    <view class="form-group">
+      <text class="form-label">备注</text>
+      <input class="form-input" placeholder="选填" value="{{remark}}" bindinput="onRemarkInput" />
+    </view>
+
+    <button class="btn btn-primary btn-block" loading="{{submitting}}" disabled="{{submitting || items.length === 0}}" bindtap="onSubmit">
+      {{isEdit ? '保存修改' : '创建采购单'}}
+    </button>
   </view>
 
-  <view class="flex-row justify-between card">
-    <text class="text-bold text-base">合计</text>
-    <text class="text-xl text-bold text-primary">¥{{totalAmount}}</text>
-  </view>
-
-  <view class="input-group">
-    <text class="input-label">备注</text>
-    <input class="input-field" placeholder="选填" value="{{remark}}" bindinput="onRemarkInput" />
-  </view>
-
-  <button class="btn-primary" loading="{{submitting}}" disabled="{{submitting || items.length === 0}}" bindtap="onSubmit">创建采购单</button>
-
-  <view wx:if="{{showProductSearch}}" class="modal-overlay" bindtap="onAddProduct">
+  <!-- Product Search Bottom Sheet -->
+  <view wx:if="{{showProductSearch}}" class="modal-mask" bindtap="onCloseSearch">
     <view class="modal-content" catchtap>
       <text class="modal-title">选择商品</text>
-      <input class="input-field" placeholder="搜索商品名称" value="{{productSearch}}" bindinput="onProductSearchInput" />
+      <view class="search-bar">
+        <input class="search-input" placeholder="搜索商品名称" value="{{productSearch}}" bindinput="onProductSearchInput" />
+      </view>
       <view class="divider"></view>
-      <scroll-view scroll-y style="max-height: 300px;">
-        <view wx:if="{{searchResults.length === 0}}" class="text-center text-muted p-12">输入商品名称搜索</view>
+      <scroll-view scroll-y style="max-height: 400rpx;">
+        <view wx:if="{{searchLoading}}" class="loading-center"><view class="loading-spinner"></view></view>
+        <view wx:elif="{{searchResults.length === 0 && productSearch}}" class="text-center text-muted p-12">未找到匹配商品</view>
+        <view wx:elif="{{searchResults.length === 0}}" class="text-center text-muted p-12">输入商品名称搜索</view>
         <view wx:for="{{searchResults}}" wx:key="id" class="list-item" data-product="{{item}}" bindtap="onSelectProduct">
-          <view class="flex-1">
-            <text class="text-bold">{{item.name}}</text>
-            <text class="text-sm text-secondary ml-8">¥{{item.salePrice}}</text>
+          <view class="flex-row justify-between items-center">
+            <view>
+              <text class="text-bold">{{item.name}}</text>
+              <text wx:if="{{item.barcode}}" class="text-sm text-muted ml-8">{{item.barcode}}</text>
+            </view>
+            <text class="text-sm text-primary">¥{{item.costPrice}}</text>
           </view>
         </view>
       </scroll-view>
-      <button class="btn-secondary mt-8" bindtap="onAddProduct">取消</button>
+      <button class="btn btn-secondary btn-block" bindtap="onCloseSearch">取消</button>
     </view>
   </view>
 </view>

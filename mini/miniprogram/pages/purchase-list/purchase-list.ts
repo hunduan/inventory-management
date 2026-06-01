@@ -1,11 +1,10 @@
-import purchasesApi, { PurchaseOrder } from '../../services/purchases';
+import purchasesApi from '../../services/purchases';
 
 Page({
   data: {
-    orders: [] as PurchaseOrder[],
+    orders: [] as any[],
     statusFilter: '',
     page: 1,
-    limit: 20,
     total: 0,
     loading: false,
     hasMore: true,
@@ -16,24 +15,12 @@ Page({
       { label: '已入库', value: 'RECEIVED' },
       { label: '已作废', value: 'CANCELLED' },
     ],
-    selectedOrder: null as PurchaseOrder | null,
-    showDetail: false,
-    detailLoading: false,
   },
 
-  onLoad(options: any) {
-    if (options?.id) {
-      this.loadOrderDetail(options.id);
-    } else {
-      this.loadOrders();
-    }
-  },
-
+  onLoad() { this.loadOrders(); },
   onShow() {
-    if (!this.data.showDetail) {
-      this.setData({ page: 1, orders: [], hasMore: true });
-      this.loadOrders();
-    }
+    this.setData({ page: 1, orders: [], hasMore: true });
+    this.loadOrders();
   },
 
   onPullDownRefresh() {
@@ -52,13 +39,14 @@ Page({
     if (this.data.loading) return;
     this.setData({ loading: true });
     try {
-      const res = await purchasesApi.list({ status: this.data.statusFilter, page: this.data.page, limit: this.data.limit });
+      const res = await purchasesApi.list({ status: this.data.statusFilter, page: this.data.page });
       this.setData({
         orders: this.data.page === 1 ? res.data : [...this.data.orders, ...res.data],
         total: res.total,
-        hasMore: this.data.page * this.data.limit < res.total,
+        hasMore: this.data.page * 20 < res.total,
       });
     } catch (err: any) {
+      console.error('purchase-list load failed:', err);
       wx.showToast({ title: err.message || '加载失败', icon: 'none' });
     } finally {
       this.setData({ loading: false });
@@ -71,62 +59,9 @@ Page({
     this.loadOrders();
   },
 
-  async loadOrderDetail(id: string) {
-    this.setData({ detailLoading: true, showDetail: true });
-    try {
-      const order = await purchasesApi.getById(id);
-      this.setData({ selectedOrder: order });
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '加载失败', icon: 'none' });
-      this.setData({ showDetail: false });
-    } finally {
-      this.setData({ detailLoading: false });
-    }
-  },
-
   onOrderTap(e: WechatMiniprogram.TouchEvent) {
     const id = e.currentTarget.dataset.id;
-    this.loadOrderDetail(id);
-  },
-
-  onCloseDetail() {
-    this.setData({ showDetail: false, selectedOrder: null });
-  },
-
-  async onConfirm(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id;
-    try {
-      await purchasesApi.confirm(id);
-      wx.showToast({ title: '已确认', icon: 'success' });
-      this.loadOrderDetail(id);
-      this.loadOrders();
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    }
-  },
-
-  async onReceive(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id;
-    try {
-      await purchasesApi.receive(id);
-      wx.showToast({ title: '已入库', icon: 'success' });
-      this.loadOrderDetail(id);
-      this.loadOrders();
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    }
-  },
-
-  async onCancel(e: WechatMiniprogram.TouchEvent) {
-    const id = e.currentTarget.dataset.id;
-    try {
-      await purchasesApi.cancel(id);
-      wx.showToast({ title: '已作废', icon: 'success' });
-      this.loadOrderDetail(id);
-      this.loadOrders();
-    } catch (err: any) {
-      wx.showToast({ title: err.message || '操作失败', icon: 'none' });
-    }
+    wx.navigateTo({ url: `/pages/order-detail/order-detail?id=${id}&type=PURCHASE` });
   },
 
   onCreate() {

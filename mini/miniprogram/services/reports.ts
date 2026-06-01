@@ -1,16 +1,25 @@
 import { api } from './request';
 
 export interface DashboardData {
-  todayPurchaseTotal: number;
-  todaySaleTotal: number;
-  alertCount: number;
-  recentOrders: {
+  todayPurchases: number;
+  todaySales: number;
+  totalProducts: number;
+  lowStockCount: number;
+  recentPurchases: {
     id: string;
     orderNo: string;
-    type: 'PURCHASE' | 'SALE';
     totalAmount: number;
     status: string;
     createdAt: string;
+    supplier?: { name: string };
+  }[];
+  recentSales: {
+    id: string;
+    orderNo: string;
+    totalAmount: number;
+    status: string;
+    createdAt: string;
+    customer?: { name: string };
   }[];
 }
 
