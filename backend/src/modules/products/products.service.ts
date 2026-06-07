@@ -25,7 +25,7 @@ export class ProductsService {
 
     const [items, total] = await Promise.all([
       this.prisma.product.findMany({
-        where, include: { category: true }, skip, take: limit, orderBy: { createdAt: 'desc' },
+        where, include: { category: { include: { attributes: { orderBy: { sortOrder: 'asc' } } } } }, skip, take: limit, orderBy: { createdAt: 'desc' },
       }),
       this.prisma.product.count({ where }),
     ]);

@@ -6,24 +6,24 @@ import {
   Space,
   Modal,
   Form,
+  Select,
   Spin,
   Empty,
   Alert,
-  Pagination,
   message,
   Popconfirm,
   Card,
 } from 'antd';
 import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
 import { warehousesApi } from '../../api/warehouses';
-import type { Warehouse, PaginatedResponse } from '../../types';
+import type { Warehouse } from '../../types';
 
 export default function WarehousesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [data, setData] = useState<PaginatedResponse<Warehouse> | null>(null);
+  const [treeData, setTreeData] = useState<Warehouse[]>([]);
+  const [allWarehouses, setAllWarehouses] = useState<Warehouse[]>([]);
   const [search, setSearch] = useState('');
-  const [page, setPage] = useState(1);
   const [modalOpen, setModalOpen] = useState(false);
   const [editing, setEditing] = useState<Warehouse | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -33,12 +33,12 @@ export default function WarehousesPage() {
     setLoading(true);
     setError(null);
     try {
-      const params = new URLSearchParams();
-      if (search) params.set('search', search);
-      params.set('page', String(page));
-      params.set('limit', '20');
-      const result = await warehousesApi.list(params.toString());
-      setData(result);
+      const [tree, flat] = await Promise.all([
+        warehousesApi.tree(),
+        warehousesApi.list('limit=1000'),
+      ]);
+      setTreeData(tree);
+      setAllWarehouses(flat.data);
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : '加载仓库失败');
     } finally {
@@ -48,12 +48,7 @@ export default function WarehousesPage() {
 
   useEffect(() => {
     fetchData();
-  }, [page]);
-
-  const handleSearch = () => {
-    setPage(1);
-    fetchData();
-  };
+  }, []);
 
   const openCreate = () => {
     setEditing(null);
@@ -66,6 +61,10 @@ export default function WarehousesPage() {
     form.setFieldsValue(warehouse);
     setModalOpen(true);
   };
+
+  const parentOptions = allWarehouses
+    .filter((w) => !w.parentId && (!editing || w.id !== editing.id))
+    .map((w) => ({ label: w.name, value: w.id }));
 
   const handleSubmit = async () => {
     const values = await form.validateFields();
@@ -98,7 +97,14 @@ export default function WarehousesPage() {
   };
 
   const columns = [
-    { title: '名称', dataIndex: 'name', key: 'name' },
+    {
+      title: '名称',
+      dataIndex: 'name',
+      key: 'name',
+      render: (v: string, record: Warehouse) => (
+        <span style={{ fontWeight: record.parentId ? 'normal' : 600 }}>{v}</span>
+      ),
+    },
     { title: '地址', dataIndex: 'address', key: 'address', render: (v: string | null) => v || '-' },
     {
       title: '操作',
@@ -118,6 +124,8 @@ export default function WarehousesPage() {
     },
   ];
 
+  const defaultExpandedRowKeys = treeData.map((r) => r.id);
+
   return (
     <div>
       <Card style={{ marginBottom: 16 }}>
@@ -127,11 +135,11 @@ export default function WarehousesPage() {
             prefix={<SearchOutlined />}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            onPressEnter={handleSearch}
+            onPressEnter={() => fetchData()}
             style={{ width: 250 }}
             allowClear
           />
-          <Button type="primary" onClick={handleSearch}>
+          <Button type="primary" onClick={() => fetchData()}>
             搜索
           </Button>
           <div style={{ flex: 1 }} />
@@ -153,22 +161,16 @@ export default function WarehousesPage() {
           showIcon
           action={<Button onClick={fetchData}>重试</Button>}
         />
-      ) : data && data.data.length > 0 ? (
+      ) : treeData.length > 0 ? (
         <Card>
-          <div style={{ marginBottom: 12, color: '#78716c' }}>
-            共 {data.total} 个仓库
-          </div>
-          <Table dataSource={data.data} columns={columns} rowKey="id" pagination={false} />
-          <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: 16 }}>
-            <Pagination
-              current={page}
-              total={data.total}
-              pageSize={20}
-              onChange={(p) => setPage(p)}
-              showTotal={(t) => `共 ${t} 条`}
-              showSizeChanger={false}
-            />
-          </div>
+          <Table
+            dataSource={treeData}
+            columns={columns}
+            rowKey="id"
+            pagination={false}
+            defaultExpandedRowKeys={defaultExpandedRowKeys}
+            childrenColumnName="children"
+          />
         </Card>
       ) : (
         <Empty description="暂无仓库" style={{ padding: 80 }}>
@@ -188,6 +190,13 @@ export default function WarehousesPage() {
         <Form form={form} layout="vertical">
           <Form.Item name="name" label="仓库名称" rules={[{ required: true, message: '请输入名称' }]}>
             <Input placeholder="名称" />
+          </Form.Item>
+          <Form.Item name="parentId" label="父级仓库">
+            <Select
+              placeholder="不选择则为顶级仓库"
+              allowClear
+              options={parentOptions}
+            />
           </Form.Item>
           <Form.Item name="address" label="地址">
             <Input.TextArea placeholder="地址" rows={2} />

@@ -33,4 +33,14 @@ export const purchasesApi = {
 
   cancel: (id: string) =>
     api.post<PurchaseOrder>(`/purchases/${id}/cancel`).then((r) => r.data),
+
+  exportExcel: (params?: string) =>
+    api.get(`/purchases/export?${params ?? ''}`, { responseType: 'blob' }).then((r) => {
+      const url = window.URL.createObjectURL(new Blob([r.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `purchases-${Date.now()}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }),
 };

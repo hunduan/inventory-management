@@ -14,9 +14,15 @@ export class WarehousesController {
   constructor(private warehousesService: WarehousesService) {}
 
   @Get()
-  @ApiOperation({ summary: '仓库列表' })
+  @ApiOperation({ summary: '仓库列表（分页扁平）' })
   async findAll(@TenantId() tenantId: string, @Query() query: { search?: string; page?: number; limit?: number }) {
     return this.warehousesService.findAll(tenantId, query);
+  }
+
+  @Get('tree')
+  @ApiOperation({ summary: '仓库树形结构' })
+  async findTree(@TenantId() tenantId: string) {
+    return this.warehousesService.findTree(tenantId);
   }
 
   @Get(':id')

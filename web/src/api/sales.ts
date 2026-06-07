@@ -32,4 +32,14 @@ export const salesApi = {
 
   cancel: (id: string) =>
     api.post<SaleOrder>(`/sales/${id}/cancel`).then((r) => r.data),
+
+  exportExcel: (params?: string) =>
+    api.get(`/sales/export?${params ?? ''}`, { responseType: 'blob' }).then((r) => {
+      const url = window.URL.createObjectURL(new Blob([r.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `sales-${Date.now()}.xlsx`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+    }),
 };

@@ -11,7 +11,7 @@ import {
   Pagination,
   Card,
 } from 'antd';
-import { PlusOutlined } from '@ant-design/icons';
+import { PlusOutlined, DownloadOutlined } from '@ant-design/icons';
 import { stocktakeApi } from '../../api/stocktake';
 import { warehousesApi } from '../../api/warehouses';
 import type { Stocktake, PaginatedResponse, Warehouse } from '../../types';
@@ -86,6 +86,9 @@ export default function StocktakeList() {
             options={warehouses.map((w) => ({ label: w.name, value: w.id }))}
           />
           <div style={{ flex: 1 }} />
+          <Button icon={<DownloadOutlined />} onClick={() => stocktakeApi.downloadTemplate()} style={{ marginRight: 8 }}>
+            下载导入模板
+          </Button>
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/stocktakes/new')}>新增盘点</Button>
         </div>
       </Card>

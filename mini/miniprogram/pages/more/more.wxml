@@ -41,6 +41,11 @@
       <text class="more-menu-text">调拨管理</text>
       <text class="more-menu-arrow">›</text>
     </view>
+    <view class="more-menu-item" bindtap="onNavigate" data-url="/pages/category-attributes/category-attributes">
+      <text class="more-menu-icon">🏷️</text>
+      <text class="more-menu-text">分类属性</text>
+      <text class="more-menu-arrow">›</text>
+    </view>
   </view>
 
   <view class="card more-menu">

@@ -43,4 +43,9 @@ Page({
 
   onSearchInput(e: WechatMiniprogram.Input) { this.setData({ searchQuery: e.detail.value }); },
   onSearch() { this.setData({ page: 1, products: [], hasMore: true }); this.loadProducts(); },
+  onAdd() { wx.navigateTo({ url: '/pages/product-edit/product-edit' }); },
+  onEditProduct(e: WechatMiniprogram.TouchEvent) {
+    const id = e.currentTarget.dataset.id;
+    wx.navigateTo({ url: `/pages/product-edit/product-edit?id=${id}` });
+  },
 });

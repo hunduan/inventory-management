@@ -1,0 +1,16 @@
+.tag-select {
+  display: inline-block;
+  padding: 6rpx 16rpx;
+  margin: 4rpx;
+  border: 1rpx solid #e7e5e4;
+  border-radius: 8rpx;
+  font-size: 26rpx;
+  color: #1c1917;
+  background: #ffffff;
+}
+
+.tag-select-active {
+  border-color: #0f766e;
+  color: #0f766e;
+  background: #f0fdfa;
+}

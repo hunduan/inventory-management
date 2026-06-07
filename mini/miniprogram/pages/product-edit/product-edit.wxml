@@ -1,0 +1,86 @@
+<view class="page page-enter">
+  <view wx:if="{{loading}}" class="loading-center">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:else>
+    <text class="text-xl text-bold mb-16">{{isEdit ? '编辑商品' : '新增商品'}}</text>
+
+    <view class="card">
+      <view class="form-group">
+        <text class="form-label">商品名称</text>
+        <input class="form-input" placeholder="请输入商品名称" value="{{name}}" bindinput="onNameInput" />
+      </view>
+
+      <view class="form-group">
+        <text class="form-label">所属分类</text>
+        <picker class="form-picker" mode="selector" range="{{categories}}" range-key="name" value="{{categoryIndex}}" bindchange="onCategoryChange">
+          <text wx:if="{{categoryIndex >= 0}}" class="text-base">{{categories[categoryIndex].name}}</text>
+          <text wx:else class="text-muted">请选择分类</text>
+        </picker>
+      </view>
+    </view>
+
+    <!-- Dynamic attributes -->
+    <view wx:if="{{attributes.length > 0}}" class="card">
+      <text class="text-base text-bold mb-8">自定义属性</text>
+      <view wx:for="{{attributes}}" wx:key="id" class="form-group">
+        <text class="form-label">{{item.name}}<text wx:if="{{item.required}}" class="text-danger"> *</text></text>
+        <view wx:if="{{item.fieldType === 'select'}}">
+          <view class="flex-row flex-wrap">
+            <view
+              wx:for="{{item.options}}"
+              wx:key="this"
+              class="tag-select {{specs[item.name] === option ? 'tag-select-active' : ''}}"
+              data-key="{{item.name}}"
+              data-value="{{option}}"
+              bindtap="onSpecSelect"
+            >
+              <text>{{option}}</text>
+            </view>
+          </view>
+        </view>
+        <input
+          wx:else
+          class="form-input"
+          type="{{item.fieldType === 'number' ? 'digit' : 'text'}}"
+          placeholder="{{item.fieldType === 'date' ? '请输入日期 (YYYY-MM-DD)' : '请输入' + item.name}}"
+          value="{{specs[item.name]}}"
+          data-key="{{item.name}}"
+          bindinput="onSpecInput"
+        />
+      </view>
+    </view>
+
+    <view class="card">
+      <view class="form-group">
+        <text class="form-label">条码</text>
+        <input class="form-input" placeholder="商品条码" value="{{barcode}}" bindinput="onBarcodeInput" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">SKU</text>
+        <input class="form-input" placeholder="商品SKU" value="{{sku}}" bindinput="onSkuInput" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">单位</text>
+        <input class="form-input" placeholder="个" value="{{unit}}" bindinput="onUnitInput" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">销售价</text>
+        <input class="form-input" type="digit" placeholder="0.00" value="{{salePrice}}" bindinput="onSalePriceInput" />
+      </view>
+      <view class="form-group">
+        <text class="form-label">成本价</text>
+        <input class="form-input" type="digit" placeholder="0.00" value="{{costPrice}}" bindinput="onCostPriceInput" />
+      </view>
+      <view class="form-group flex-row items-center">
+        <text class="form-label">启用</text>
+        <switch checked="{{enabled}}" bindchange="onEnabledChange" color="#0f766e" />
+      </view>
+    </view>
+
+    <button class="btn btn-primary btn-block" loading="{{submitting}}" disabled="{{submitting || !name}}" bindtap="onSubmit">
+      {{isEdit ? '保存修改' : '创建商品'}}
+    </button>
+  </view>
+</view>

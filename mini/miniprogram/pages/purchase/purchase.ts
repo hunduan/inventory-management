@@ -1,6 +1,7 @@
 import purchasesApi from '../../services/purchases';
 import productsApi from '../../services/products';
 import { api } from '../../services/request';
+import { parseAndResolve } from '../../utils/order-helper';
 
 Page({
   data: {
@@ -19,6 +20,11 @@ Page({
     loading: true,
     editId: '',
     isEdit: false,
+    // smart input
+    showSmartInput: false,
+    smartText: '',
+    unresolvedNames: [] as string[],
+    parsing: false,
   },
 
   async onLoad(options: any) {
@@ -76,6 +82,71 @@ Page({
   onSupplierChange(e: WechatMiniprogram.PickerChange) { this.setData({ supplierIndex: Number(e.detail.value) }); },
   onWarehouseChange(e: WechatMiniprogram.PickerChange) { this.setData({ warehouseIndex: Number(e.detail.value) }); },
   onRemarkInput(e: WechatMiniprogram.Input) { this.setData({ remark: e.detail.value }); },
+
+  async onScanBarcode() {
+    try {
+      const res = await wx.scanCode({ onlyFromCamera: false });
+      const barcode = res.result;
+      if (!barcode) {
+        wx.showToast({ title: '未能识别条形码', icon: 'none' });
+        return;
+      }
+      const product = await productsApi.getByBarcode(barcode);
+      if (product) {
+        this.addItemToOrder(product);
+        wx.showToast({ title: '已添加: ' + product.name, icon: 'success' });
+      } else {
+        wx.showToast({ title: `未找到条形码为 "${barcode}" 的商品`, icon: 'none' });
+      }
+    } catch (err: any) {
+      if (err.errMsg?.includes('cancel')) return;
+      wx.showToast({ title: err.message || '扫码失败', icon: 'none' });
+    }
+  },
+
+  onToggleSmartInput() {
+    this.setData({
+      showSmartInput: !this.data.showSmartInput,
+      smartText: '',
+      unresolvedNames: [],
+    });
+  },
+
+  onSmartTextInput(e: WechatMiniprogram.Input) {
+    this.setData({ smartText: e.detail.value });
+  },
+
+  async onParseSmartText() {
+    const text = this.data.smartText.trim();
+    if (!text) {
+      wx.showToast({ title: '请输入商品信息', icon: 'none' });
+      return;
+    }
+    this.setData({ parsing: true, unresolvedNames: [] });
+    try {
+      const { items, unresolved } = await parseAndResolve(
+        text,
+        this.data.items,
+        'PURCHASE',
+        'costPrice',
+      );
+      this.setData({
+        items,
+        totalAmount: this.calcTotal(items),
+        unresolvedNames: unresolved,
+        parsing: false,
+      });
+      if (items.length > this.data.items.length) {
+        wx.showToast({ title: '已添加商品', icon: 'success' });
+      }
+      if (unresolved.length === 0) {
+        this.setData({ showSmartInput: false });
+      }
+    } catch (err: any) {
+      wx.showToast({ title: err.message || '解析失败', icon: 'none' });
+      this.setData({ parsing: false });
+    }
+  },
 
   onAddProduct() { this.setData({ showProductSearch: true, productSearch: '', searchResults: [] }); },
   onCloseSearch() { this.setData({ showProductSearch: false }); },

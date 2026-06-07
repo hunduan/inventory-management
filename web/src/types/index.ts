@@ -36,6 +36,19 @@ export interface Role {
   updatedAt: string;
 }
 
+export interface CategoryAttribute {
+  id: string;
+  tenantId: string;
+  categoryId: string;
+  name: string;
+  fieldType: 'text' | 'number' | 'select' | 'date';
+  options?: string[];
+  required: boolean;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export interface Category {
   id: string;
   tenantId: string;
@@ -43,6 +56,7 @@ export interface Category {
   parentId?: string;
   sortOrder: number;
   children?: Category[];
+  attributes?: CategoryAttribute[];
 }
 
 export interface Product {
@@ -64,9 +78,12 @@ export interface Product {
 export interface Warehouse {
   id: string;
   tenantId: string;
+  parentId?: string;
   name: string;
   address?: string;
   enabled: boolean;
+  parent?: Warehouse;
+  children?: Warehouse[];
 }
 
 export interface Supplier {

@@ -12,7 +12,7 @@ import {
   Card,
   DatePicker,
 } from 'antd';
-import { PlusOutlined, SearchOutlined } from '@ant-design/icons';
+import { PlusOutlined, SearchOutlined, DownloadOutlined } from '@ant-design/icons';
 import { salesApi } from '../../api/sales';
 import { warehousesApi } from '../../api/warehouses';
 import { productsApi } from '../../api/products';
@@ -42,6 +42,18 @@ export default function SalesList() {
 
   const [warehouses, setWarehouses] = useState<Warehouse[]>([]);
   const [products, setProducts] = useState<Product[]>([]);
+  const [expandedRowKeys, setExpandedRowKeys] = useState<string[]>([]);
+
+  const allRowKeys = data?.data.map((r) => r.id) ?? [];
+  const isAllExpanded = expandedRowKeys.length === allRowKeys.length && allRowKeys.length > 0;
+
+  const toggleExpandAll = () => {
+    if (isAllExpanded) {
+      setExpandedRowKeys([]);
+    } else {
+      setExpandedRowKeys(allRowKeys);
+    }
+  };
 
   useEffect(() => {
     Promise.all([
@@ -202,6 +214,8 @@ export default function SalesList() {
             ]}
           />
           <Button type="primary" icon={<SearchOutlined />} onClick={handleSearch}>搜索</Button>
+          <Button icon={<DownloadOutlined />} onClick={() => salesApi.exportExcel()}>导出</Button>
+          <Button onClick={toggleExpandAll}>{isAllExpanded ? '全部收起' : '全部展开'}</Button>
           <div style={{ flex: 1 }} />
           <Button type="primary" icon={<PlusOutlined />} onClick={() => navigate('/sales/new')}>
             新增销售单
@@ -232,6 +246,8 @@ export default function SalesList() {
             rowKey="id"
             pagination={false}
             expandable={{
+              expandedRowKeys,
+              onExpandedRowsChange: (keys) => setExpandedRowKeys(keys as string[]),
               expandedRowRender: (record) => (
                 <Table
                   dataSource={record.items || []}

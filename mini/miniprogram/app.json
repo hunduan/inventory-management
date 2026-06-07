@@ -16,6 +16,8 @@
     "pages/report/report",
     "pages/scan/scan",
     "pages/voice/voice",
+    "pages/product-edit/product-edit",
+    "pages/category-attributes/category-attributes",
     "pages/more/more"
   ],
   "window": {

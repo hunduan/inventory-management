@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsBoolean } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsBoolean, IsObject } from 'class-validator';
 import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateProductDto {
@@ -29,6 +29,10 @@ export class CreateProductDto {
   @IsNumber()
   @IsOptional()
   costPrice?: number;
+
+  @IsObject()
+  @IsOptional()
+  specs?: Record<string, any>;
 
   @IsBoolean()
   @IsOptional()

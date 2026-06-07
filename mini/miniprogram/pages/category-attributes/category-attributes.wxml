@@ -1,0 +1,43 @@
+<view class="page page-enter">
+  <view wx:if="{{loading}}" class="loading-center">
+    <view class="loading-spinner"></view>
+  </view>
+
+  <view wx:elif="{{selectedCategory}}">
+    <view class="flex-row items-center mb-16">
+      <text class="text-lg text-bold flex-1">{{selectedCategory.name}} - 属性列表</text>
+      <button class="btn btn-secondary btn-xs" bindtap="onBack">返回</button>
+    </view>
+
+    <view wx:if="{{attrLoading}}" class="loading-center"><view class="loading-spinner"></view></view>
+
+    <view wx:elif="{{attributes.length === 0}}" class="empty-state">
+      <text class="empty-text">该分类暂无自定义属性</text>
+    </view>
+
+    <view wx:else class="card">
+      <view wx:for="{{attributes}}" wx:key="id" class="p-12" style="border-bottom: 1rpx solid #f0f0f0;">
+        <view class="flex-row items-center">
+          <text class="text-bold">{{item.name}}</text>
+          <text class="tag tag-blue text-xs ml-8">
+            {{item.fieldType === 'text' ? '文本' : item.fieldType === 'number' ? '数字' : item.fieldType === 'select' ? '下拉选择' : '日期'}}
+          </text>
+          <text wx:if="{{item.required}}" class="tag tag-red text-xs ml-8">必填</text>
+        </view>
+        <view wx:if="{{item.fieldType === 'select' && item.options && item.options.length > 0}}" class="mt-4">
+          <text class="text-xs text-secondary">选项: {{item.options.join(', ')}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+
+  <view wx:else>
+    <text class="text-xl text-bold mb-16">选择分类查看属性</text>
+    <view wx:for="{{categories}}" wx:key="id" class="card list-item" data-category="{{item}}" bindtap="onSelectCategory">
+      <text class="text-bold">{{item.name}}</text>
+      <text class="text-xs text-secondary ml-8">
+        ({{item.attributes ? item.attributes.length : 0}} 项属性)
+      </text>
+    </view>
+  </view>
+</view>

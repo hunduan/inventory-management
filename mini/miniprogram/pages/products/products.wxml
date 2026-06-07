@@ -1,6 +1,7 @@
 <view class="page page-enter">
   <view class="section-header">
     <text class="section-title">商品列表</text>
+    <button class="btn btn-primary btn-xs" bindtap="onAdd">+ 新增</button>
   </view>
 
   <view class="search-bar">
@@ -17,16 +18,19 @@
   </view>
 
   <view wx:else>
-    <view class="card product-item" wx:for="{{products}}" wx:key="id">
+    <view class="card product-item" wx:for="{{products}}" wx:key="id" data-id="{{item.id}}" bindtap="onEditProduct">
       <view class="flex-row justify-between items-center">
         <view class="flex-1">
-          <view class="flex-row items-center gap-8">
+          <view class="flex-row items-center">
             <text class="text-bold">{{item.name}}</text>
-            <text wx:if="{{item.barcode}}" class="text-xs tag tag-blue">{{item.barcode}}</text>
+            <text wx:if="{{item.barcode}}" class="text-xs tag tag-blue ml-8">{{item.barcode}}</text>
           </view>
-          <view class="flex-row gap-8 mt-4">
+          <view class="flex-row mt-4">
             <text class="text-xs text-secondary">成本: ¥{{item.costPrice}}</text>
-            <text class="text-xs text-secondary">售价: ¥{{item.salePrice}}</text>
+            <text class="text-xs text-secondary ml-16">售价: ¥{{item.salePrice}}</text>
+          </view>
+          <view wx:if="{{item.specs}}" class="flex-row flex-wrap mt-4">
+            <text wx:for="{{Object.keys(item.specs)}}" wx:for-item="attrKey" wx:key="this" class="tag tag-default text-xs mr-4 mt-4">{{attrKey}}: {{item.specs[attrKey]}}</text>
           </view>
         </view>
         <text class="text-sm text-secondary">库存: {{item.stock || 0}}</text>

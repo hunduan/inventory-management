@@ -270,4 +270,52 @@ export class PurchasesService {
     if (result.count === 0) throw new BadRequestException('采购单状态已变化，请刷新后重试');
     return this.findById(tenantId, id);
   }
+
+  async exportExcel(tenantId: string, query: any): Promise<Buffer> {
+    const where: any = { tenantId };
+    if (query.status) where.status = query.status;
+    if (query.warehouseId) where.warehouseId = query.warehouseId;
+    if (query.startDate || query.endDate) {
+      where.createdAt = {};
+      if (query.startDate) where.createdAt.gte = new Date(query.startDate);
+      if (query.endDate) where.createdAt.lte = new Date(query.endDate);
+    }
+    if (query.productId) {
+      where.items = { some: { productId: query.productId } };
+    }
+
+    const orders = await this.prisma.purchaseOrder.findMany({
+      where,
+      include: { supplier: true, warehouse: true, items: { include: { product: true } } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    const statusLabels: Record<string, string> = {
+      DRAFT: '草稿', CONFIRMED: '已确认', RECEIVED: '已入库', CANCELLED: '已作废',
+    };
+
+    const rows: any[] = [];
+    for (const order of orders) {
+      for (const item of order.items) {
+        rows.push({
+          '单号': order.orderNo,
+          '供应商': order.supplier?.name || '',
+          '仓库': order.warehouse?.name || '',
+          '商品名称': item.product?.name || '',
+          '数量': Number(item.quantity),
+          '单价': Number(item.unitCost),
+          '小计': Number(item.subtotal),
+          '总金额': Number(order.totalAmount),
+          '状态': statusLabels[order.status] || order.status,
+          '创建时间': order.createdAt.toISOString().replace('T', ' ').slice(0, 16),
+        });
+      }
+    }
+
+    const XLSX = require('xlsx');
+    const ws = XLSX.utils.json_to_sheet(rows);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '采购单');
+    return XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+  }
 }

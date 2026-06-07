@@ -261,6 +261,15 @@ view, scroll-view, swiper, movable-view, cover-view {
   opacity: 0.7;
 }
 
+.btn-outline {
+  background: transparent;
+  color: var(--primary, #0f766e);
+  border: 1px solid var(--border, #e7e5e4);
+}
+.btn-outline:active {
+  background: var(--primary-bg, #f0fdfa);
+}
+
 /* ===== Form Elements ===== */
 .form-group {
   margin-bottom: 16px;

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   Card,
@@ -14,6 +14,7 @@ import {
   Popconfirm,
   InputNumber,
 } from 'antd';
+import { UploadOutlined } from '@ant-design/icons';
 import { stocktakeApi } from '../../api/stocktake';
 import type { Stocktake, StocktakeItem } from '../../types';
 import dayjs from 'dayjs';
@@ -37,6 +38,8 @@ export default function StocktakeDetail() {
   const [actualQuantities, setActualQuantities] = useState<Record<string, number>>({});
   const [dirtyItems, setDirtyItems] = useState<Set<string>>(new Set());
   const [_savingItems, setSavingItems] = useState<Set<string>>(new Set());
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importing, setImporting] = useState(false);
 
   const fetchData = async () => {
     if (!id) return;
@@ -125,6 +128,22 @@ export default function StocktakeDetail() {
 
   if (!stocktake) return null;
 
+  const handleImportFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !id) return;
+    setImporting(true);
+    try {
+      await stocktakeApi.importItems(id, file);
+      message.success('导入成功');
+      fetchData();
+    } catch (err: unknown) {
+      message.error(err instanceof Error ? err.message : '导入失败');
+    } finally {
+      setImporting(false);
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
+  };
+
   const statusInfo = statusMap[stocktake.status];
   const isInProgress = stocktake.status === 'IN_PROGRESS';
 
@@ -180,6 +199,14 @@ export default function StocktakeDetail() {
                 <Popconfirm title="确定开始盘点？" onConfirm={() => handleAction('start', () => stocktakeApi.start(stocktake.id))}>
                   <Button type="primary" loading={actionLoading === 'start'}>开始盘点</Button>
                 </Popconfirm>
+              )}
+              {stocktake.status === 'IN_PROGRESS' && (
+                <>
+                  <Button icon={<UploadOutlined />} loading={importing} onClick={() => fileInputRef.current?.click()}>
+                    导入盘点数据
+                  </Button>
+                  <input ref={fileInputRef} type="file" accept=".xlsx,.xls" style={{ display: 'none' }} onChange={handleImportFile} />
+                </>
               )}
               {stocktake.status === 'IN_PROGRESS' && (
                 <Popconfirm title="确定完成盘点？" onConfirm={handleComplete}>

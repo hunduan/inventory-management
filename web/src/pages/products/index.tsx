@@ -128,6 +128,19 @@ export default function ProductsPage() {
       key: 'unit',
     },
     {
+      title: '规格',
+      key: 'specs',
+      width: 160,
+      render: (_: unknown, record: Product) => {
+        if (!record.specs || Object.keys(record.specs).length === 0) return '-';
+        return Object.entries(record.specs).map(([k, v]) => (
+          <Tag key={k} style={{ marginBottom: 2 }}>
+            {k}: {String(v)}
+          </Tag>
+        ));
+      },
+    },
+    {
       title: '状态',
       dataIndex: 'enabled',
       key: 'enabled',

@@ -18,7 +18,7 @@ export interface ParsedOrder {
 }
 
 // 常见商品关键字映射（示例，实际应来自商品库）
-const PRODUCT_KEYWORDS: Record<string, string> = {
+export const PRODUCT_KEYWORDS: Record<string, string> = {
   '苹果': '苹果',
   'iPhone': 'iPhone',
   '华为': '华为手机',
@@ -33,27 +33,30 @@ const PRODUCT_KEYWORDS: Record<string, string> = {
   '笔': '签字笔',
 };
 
-// 数字中文映射
-const CN_NUMBERS: Record<string, number> = {
-  '零': 0, '一': 1, '二': 2, '两': 2, '三': 3, '四': 4, '五': 5,
-  '六': 6, '七': 7, '八': 8, '九': 9, '十': 10,
-};
-
 function parseChineseNumber(text: string): number {
   if (!isNaN(Number(text))) return Number(text);
 
+  // 映射中文数字到数值
+  const digits: Record<string, number> = {
+    '零': 0, '一': 1, '二': 2, '两': 2, '三': 3, '四': 4,
+    '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+  };
+  const scales: Record<string, number> = {
+    '十': 10, '百': 100, '千': 1000, '万': 10000,
+  };
+
+  // 纯多位数字：十二 → 12, 二十三 → 23, 一百二十三 → 123
   let result = 0;
   let temp = 0;
-
   for (const ch of text) {
-    const num = CN_NUMBERS[ch];
-    if (num !== undefined) {
-      if (num === 10) {
-        if (temp === 0) temp = 10;
-        else { temp *= 10; result += temp; temp = 0; }
-      } else {
-        temp = num;
-      }
+    if (digits[ch] !== undefined) {
+      temp = digits[ch];
+    } else if (scales[ch] !== undefined) {
+      if (temp === 0) temp = 1; // 十二 → 1*10+2, 二十 → 2*10
+      result += temp * scales[ch];
+      temp = 0;
+    } else {
+      return 0; // 无法识别的字符
     }
   }
   result += temp;
@@ -64,8 +67,8 @@ function parseChineseNumber(text: string): number {
  * 解析语音文本，提取商品和数量信息
  * 支持格式示例：
  * - "采购 苹果10个 牛奶5瓶"
- * - "进货 矿泉水20箱 可乐15瓶"
- * - "销售 面包3个 牛奶2瓶 给张三"
+ * - "进货 矿泉水20箱，可乐15瓶"
+ * - "销售 面包3个、牛奶2瓶 给张三"
  * - "卖 苹果5斤 给李四"
  */
 export function parseVoiceText(text: string): ParsedOrder {
@@ -74,7 +77,8 @@ export function parseVoiceText(text: string): ParsedOrder {
     items: [],
   };
 
-  let remaining = text;
+  // 统一中文标点为空格
+  let remaining = text.replace(/[，、；]/g, ' ');
 
   // 判断业务类型
   if (/购买|采购|进货|入|进/i.test(remaining)) {

@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Param, Body, Query, UseGuards } from '@nestjs/common';
+import { Controller, Get, Post, Put, Param, Body, Query, UseGuards, Res } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { PurchasesService } from './purchases.service';
 import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
@@ -6,6 +6,7 @@ import { TenantId } from '../../common/decorators/tenant.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { CreatePurchaseDto } from './dto/create-purchase.dto';
 import { UpdatePurchaseDto, ReceiveItemDto } from './dto/update-purchase.dto';
+import { Response } from 'express';
 
 @ApiTags('采购')
 @ApiBearerAuth()
@@ -18,6 +19,15 @@ export class PurchasesController {
   @ApiOperation({ summary: '采购单列表' })
   async findAll(@TenantId() tenantId: string, @Query() query: any) {
     return this.purchasesService.findAll(tenantId, query);
+  }
+
+  @Get('export')
+  @ApiOperation({ summary: '导出采购单Excel' })
+  async exportExcel(@TenantId() tenantId: string, @Query() query: any, @Res() res: Response) {
+    const buffer = await this.purchasesService.exportExcel(tenantId, query);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename=purchases-${Date.now()}.xlsx`);
+    res.send(buffer);
   }
 
   @Get(':id')

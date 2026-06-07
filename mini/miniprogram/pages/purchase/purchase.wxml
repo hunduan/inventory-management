@@ -27,7 +27,11 @@
     <view class="card">
       <view class="section-header">
         <text class="section-title">商品明细</text>
-        <button class="btn btn-primary btn-xs" bindtap="onAddProduct">+ 添加商品</button>
+        <view class="flex-row gap-4">
+          <button class="btn btn-outline btn-xs" bindtap="onScanBarcode">📷 扫码</button>
+          <button class="btn btn-outline btn-xs" bindtap="onToggleSmartInput">✏️ 录入</button>
+          <button class="btn btn-primary btn-xs" bindtap="onAddProduct">+ 添加</button>
+        </view>
       </view>
       <view wx:if="{{items.length === 0}}" class="text-center p-12">
         <text class="text-muted">点击"添加商品"选择商品</text>
@@ -93,6 +97,21 @@
         </view>
       </scroll-view>
       <button class="btn btn-secondary btn-block" bindtap="onCloseSearch">取消</button>
+    </view>
+  </view>
+
+  <!-- Smart Input Bottom Sheet -->
+  <view wx:if="{{showSmartInput}}" class="modal-mask" bindtap="onToggleSmartInput">
+    <view class="modal-content" catchtap>
+      <text class="modal-title">智能录入</text>
+      <text class="text-sm text-secondary mb-12">输入商品和数量，例如"苹果10个，牛奶5瓶"</text>
+      <textarea class="form-textarea" value="{{smartText}}" bindinput="onSmartTextInput" placeholder="采购苹果10个，牛奶5瓶" style="min-height:100px;" />
+      <view wx:if="{{unresolvedNames.length > 0}}" class="mt-12">
+        <text class="text-sm text-danger">以下商品未匹配到，请手动添加：</text>
+        <view wx:for="{{unresolvedNames}}" wx:key="this" class="text-sm text-muted mt-4">{{item}}</view>
+      </view>
+      <button class="btn btn-primary btn-block mt-12" loading="{{parsing}}" disabled="{{!smartText.trim()}}" bindtap="onParseSmartText">解析并添加</button>
+      <button class="btn btn-secondary btn-block mt-8" bindtap="onToggleSmartInput">关闭</button>
     </view>
   </view>
 </view>

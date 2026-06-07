@@ -6,5 +6,9 @@ export class CreateWarehouseDto {
 
   @IsString()
   @IsOptional()
+  parentId?: string;
+
+  @IsString()
+  @IsOptional()
   address?: string;
 }
